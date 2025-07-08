@@ -2,6 +2,7 @@
   "name": "@railgun-reloaded/cryptography",
   "version": "0.0.1",
   "description": "Collection of cryptographic primatives used by RAILGUN",
+  "main": "src/index.js",
   "scripts": {
     "build": "tsc --build",
     "clean": "tsc --build --clean",
@@ -9,7 +10,8 @@
     "lint:fix": "eslint --fix",
     "pretest": "npm run build",
     "test": "npx mocha ./test/**/*.test.js",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "postinstall": "npm run build"
   },
   "repository": {
     "type": "git",
