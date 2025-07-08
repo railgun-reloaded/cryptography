@@ -1,0 +1,32 @@
+{
+  "name": "@railgun-reloaded/cryptography",
+  "version": "0.0.1",
+  "description": "Collection of cryptographic primatives used by RAILGUN",
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "pretest": "npm run build",
+    "test": "exit 1",
+    "prepack": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://git@github.com/railgun-reloaded/cryptography.git"
+  },
+  "keywords": [],
+  "author": "RAILGUN Project Contributors",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/railgun-reloaded/cryptography/issues"
+  },
+  "homepage": "https://github.com/railgun-reloaded/cryptography#readme",
+  "devDependencies": {
+    "@railgun-reloaded/eslint-config": "^1.1.0",
+    "@railgun-reloaded/tsconfig": "^1.2.0",
+    "eslint": "^9.24.0",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "yarn@1.22.22"
+}
