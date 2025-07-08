@@ -8,7 +8,7 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "pretest": "npm run build",
-    "test": "exit 1",
+    "test": "npx mocha ./test/**/*.test.ts",
     "prepack": "npm run build"
   },
   "repository": {
@@ -25,12 +25,14 @@
   "devDependencies": {
     "@railgun-reloaded/eslint-config": "^1.1.0",
     "@railgun-reloaded/tsconfig": "^1.2.0",
+    "@types/mocha": "^10.0.10",
     "eslint": "^9.24.0",
     "typescript": "^5.8.3"
   },
   "packageManager": "yarn@1.22.22",
   "dependencies": {
     "@noble/hashes": "^1.8.0",
+    "mocha": "^11.7.1",
     "poseidon-lite": "^0.3.0"
   }
 }
