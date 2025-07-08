@@ -1,4 +1,4 @@
-import { initializePoseidonFuncs } from './primatives/index'
+import { initializePoseidonFuncs } from './primatives/index.js'
 initializePoseidonFuncs()
 
-export * from './primatives/index'
+export * from './primatives/index.js'

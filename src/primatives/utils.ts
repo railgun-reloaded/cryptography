@@ -44,4 +44,38 @@ const keccak256 = (bytes: Uint8Array): Uint8Array => {
   return keccak_256(bytes)
 }
 
-export { bigintToUint8Array, uint8ArrayToBigInt, keccak256 }
+/**
+ * Converts a hexadecimal string into a Uint8Array of bytes.
+ * @param hex - The hexadecimal string to convert. It should contain an even number of characters.
+ * @returns A Uint8Array representing the bytes of the hexadecimal string.
+ * @throws Will throw an error if the input string contains invalid hexadecimal characters.
+ */
+const hexToBytes = (hex: string) => {
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16)
+  }
+  return bytes
+}
+
+/**
+ * Converts a Uint8Array of bytes into a hexadecimal string representation.
+ *
+ * Each byte is converted to its 2-character hexadecimal equivalent, and the
+ * resulting hex values are concatenated into a single string.
+ * @param bytes - The input Uint8Array containing the bytes to be converted.
+ * @returns A string representing the hexadecimal representation of the input bytes.
+ * @example
+ * ```typescript
+ * const bytes = new Uint8Array([0, 255, 128]);
+ * const hexString = bytesToHex(bytes);
+ * console.log(hexString); // Outputs: "00ff80"
+ * ```
+ */
+const bytesToHex = (bytes: Uint8Array) => {
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+export { bigintToUint8Array, uint8ArrayToBigInt, keccak256, bytesToHex, hexToBytes }
