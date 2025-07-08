@@ -78,4 +78,19 @@ const bytesToHex = (bytes: Uint8Array) => {
     .join('')
 }
 
-export { bigintToUint8Array, uint8ArrayToBigInt, keccak256, bytesToHex, hexToBytes }
+/**
+ * Convert Uint8Array to bigint
+ * @param array - Array to convert
+ * @returns bigint
+ */
+const arrayToBigInt = (array: Uint8Array): bigint => {
+  let result = 0n
+  array.forEach((element) => {
+    result = result << 8n
+
+    result += BigInt(element)
+  })
+  return result
+}
+
+export { arrayToBigInt, bigintToUint8Array, uint8ArrayToBigInt, keccak256, bytesToHex, hexToBytes }
