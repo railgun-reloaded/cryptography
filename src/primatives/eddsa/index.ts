@@ -59,6 +59,8 @@ const eddsa = {
     const sig = eddsaBuild.signPoseidon(key, montgomery)
 
     // Convert R8 elements from montgomery and to BE
+
+    // TODO: see why this fails?
     const r8 = sig.R8
     // .map((element: any) =>
     //   eddsaBuild.F.fromMontgomery(element).reverse()
@@ -83,18 +85,7 @@ const eddsa = {
     const montgomery = eddsaBuild.F.toMontgomery(
       new Uint8Array(message).reverse()
     )
-    const newSig: {
-      R8: Uint8Array[],
-      S: bigint
-    } = {
-      R8: [],
-      S: signature.S
-    }
-    newSig.R8 = signature.R8.map((element) => {
-      return eddsaBuild.F.fromMontgomery(element).reverse()
-    })
 
-    // console.log(eddsaBuild)
     return eddsaBuild.verifyPoseidon(montgomery, signature, pubkey)
   }
 }
