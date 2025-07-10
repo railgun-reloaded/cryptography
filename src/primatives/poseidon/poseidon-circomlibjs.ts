@@ -7,7 +7,7 @@ const constructors = {
 }
 
 const poseidonBuild: any = {
-  optimized: null,
+  pure: null,
   wasm: null,
 }
 
