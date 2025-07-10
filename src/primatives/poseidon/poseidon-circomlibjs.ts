@@ -33,6 +33,7 @@ const initCircomlib = async (type: 'pure' | 'wasm') => {
  * @throws Will throw an error if the Poseidon implementation has not been loaded.
  */
 const poseidon = (inputs: Uint8Array[]) => {
+  // prefer wasm, (dev) must be manually initialized as such.
   const p = typeof typeof poseidonBuild.wasm === 'undefined' ? poseidonBuild.pure : poseidonBuild.wasm
   if (typeof p === 'undefined') {
     throw new Error('Poseidon has not been loaded.')
