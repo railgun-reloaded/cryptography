@@ -1,0 +1,18 @@
+diff --git a/node_modules/circomlibjs/src/eddsa.js b/node_modules/circomlibjs/src/eddsa.js
+index 426971c..a6ae9fc 100644
+--- a/node_modules/circomlibjs/src/eddsa.js
++++ b/node_modules/circomlibjs/src/eddsa.js
+@@ -6,11 +6,11 @@ import { buildPoseidon } from "./poseidon_wasm.js";
+ import buildMimcSponge from "./mimcsponge.js";
+ import createBlakeHash from "blake-hash";
+ 
+-export default async function buildEddsa() {
++export default async function buildEddsa(injectPoseidon = undefined) {
+     const babyJub = await buildBabyJub("bn128");
+     const pedersenHash = await buildPedersenHash();
+     const mimc7 = await buildMimc7();
+-    const poseidon = await buildPoseidon();
++    const poseidon = typeof injectPoseidon != 'undefined' ? injectPoseidon : await buildPoseidon();
+     const mimcSponge = await buildMimcSponge();
+     return new Eddsa(babyJub, pedersenHash, mimc7, poseidon, mimcSponge);
+ }
