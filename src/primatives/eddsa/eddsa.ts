@@ -13,6 +13,7 @@ let eddsaBuild: any
  * @throws {Error} If the EdDSA instance fails to build.
  */
 const initializeEddsa = async (injectPoseidon?: any) => {
+  console.log('initializing')
   const eddsaPromise = buildEddsa(injectPoseidon)
   eddsaBuild = await eddsaPromise
 }

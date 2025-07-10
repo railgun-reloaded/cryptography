@@ -5,21 +5,26 @@ import { bigintToUint8Array, bytesToHex } from '../utils'
 
 import { eddsaBuild } from './eddsa'
 
+interface CircomlibSignature {
+  R8: [Uint8Array, Uint8Array];
+  S: bigint;
+}
+
 const eddsa = {
   /**
    * Convert eddsa-babyjubjub private key to public key
    * @param privateKey - babyjubjub private key
    * @returns public key
    */
-  async privateKeyToPublicKey (
+  privateKeyToPublicKey(
     privateKey: Uint8Array
-  ): Promise<[Uint8Array, Uint8Array]> {
+  ): [Uint8Array, Uint8Array] {
     // Derive key
-    const key = eddsaBuild.ed
+    const key = eddsaBuild
       .prv2pub(privateKey)
-      .map((element: any) =>
-        eddsaBuild.ed.F.fromMontgomery(element).reverse()
-      ) as [Uint8Array, Uint8Array]
+    // .map((element: any) =>
+    //   eddsaBuild.F.fromMontgomery(element).reverse()
+    // ) as [Uint8Array, Uint8Array]
 
     return key
   },
@@ -28,7 +33,7 @@ const eddsa = {
    * Generates a random babyJubJub point
    * @returns random point
    */
-  genRandomPoint (): Promise<Uint8Array> {
+  genRandomPoint(): Uint8Array {
     return poseidon([BigInt('0x' + bytesToHex(randomBytes(32)))])
   },
 
@@ -38,27 +43,49 @@ const eddsa = {
    * @param message - message to sign
    * @returns signature
    */
-  async signPoseidon (
+  signPoseidon(
     key: Uint8Array,
     message: Uint8Array
-  ): Promise<[Uint8Array, Uint8Array, Uint8Array]> {
+  ): [Uint8Array, Uint8Array, Uint8Array] {
     if (typeof eddsaBuild === 'undefined') {
       throw new Error('Invalid')
     }
     // Get montgomery representation
-    const montgomery = eddsaBuild.F.toMontgomery(
-      new Uint8Array(message).reverse()
-    )
+    // const montgomery = eddsaBuild.F.toMontgomery(
+    //   new Uint8Array(message).reverse()
+    // )
 
     // Sign
-    const sig = eddsaBuild.signPoseidon(key, montgomery)
+    const sig = eddsaBuild.signPoseidon(key, message)
 
     // Convert R8 elements from montgomery and to BE
-    const r8 = sig.R8.map((element: any) =>
-      eddsaBuild.F.fromMontgomery(element).reverse()
-    )
+    // const r8 = sig.R8.map((element: any) =>
+    //   eddsaBuild.F.fromMontgomery(element).reverse()
+    // )
 
-    return [r8[0], r8[1], bigintToUint8Array(sig.S, 32)]
+    return [sig.R8[0], sig.R8[1], bigintToUint8Array(sig.S, 32)]
   },
+
+  /**
+   * Verifies an EDDSA signature using the Poseidon hash function.
+   * @param message - The message to be verified as a Uint8Array.
+   * @param signature - The EDDSA signature to verify, represented as a CircomlibSignature object.
+   * @param pubkey - The public key used for verification, represented as a tuple of two Uint8Array elements.
+   * @returns A boolean indicating whether the signature is valid.
+   * @throws An error if the `eddsaBuild` module is not defined.
+   */
+  verifyEDDSA(message: Uint8Array, signature: CircomlibSignature, pubkey: [Uint8Array, Uint8Array]) {
+    if (typeof eddsaBuild === 'undefined') {
+      console.log('UNDEFINED')
+      throw new Error('Invalid')
+    }
+    console.log('verifyings')
+    // Get montgomery representation
+    // const montgomery = eddsaBuild.F.toMontgomery(
+    //   new Uint8Array(message).reverse()
+    // )
+    // console.log(eddsaBuild)
+    return eddsaBuild.verifyPoseidon(message, signature, pubkey)
+  }
 }
 export { eddsa }
