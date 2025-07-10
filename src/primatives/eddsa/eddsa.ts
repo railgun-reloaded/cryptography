@@ -27,10 +27,10 @@ const initializeEddsa = async (injectPoseidon?: any) => {
  * @async
  * @returns Resolves when the EdDSA initialization is complete.
  */
-const autoInitialize = async () => {
+const autoInitializeEddsa = async () => {
   // check which poseidon was built.
   const poseidonLib = typeof poseidonBuild.wasm !== 'undefined' ? poseidonBuild.pure : poseidonBuild.wasm
   await initializeEddsa(poseidonLib)
 }
 
-export { initializeEddsa, autoInitialize, eddsaBuild }
+export { initializeEddsa, autoInitializeEddsa, eddsaBuild }
