@@ -1,4 +1,4 @@
-import { bigintToUint8Array, poseidonLib, uint8ArrayToBigInt } from './index'
+import { bigintToUint8Array, poseidonLib, uint8ArrayToBigInt } from '../index'
 
 type PoseidonFunc = (input: (bigint | number | string)[], nOuts?: number) => bigint
 const poseidonFuncs: PoseidonFunc[] = []
