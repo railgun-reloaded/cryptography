@@ -16,7 +16,7 @@ const eddsa = {
    * @param privateKey - babyjubjub private key
    * @returns public key
    */
-  privateKeyToPublicKey(
+  privateKeyToPublicKey (
     privateKey: Uint8Array
   ): [Uint8Array, Uint8Array] {
     // Derive key
@@ -32,7 +32,7 @@ const eddsa = {
    * Generates a random babyJubJub point
    * @returns random point
    */
-  genRandomPoint(): Uint8Array {
+  genRandomPoint (): Uint8Array {
     return poseidon([BigInt('0x' + bytesToHex(randomBytes(32)))])
   },
 
@@ -42,7 +42,7 @@ const eddsa = {
    * @param message - message to sign
    * @returns signature
    */
-  signPoseidon(
+  signPoseidon (
     key: Uint8Array,
     message: Uint8Array
   ): [Uint8Array, Uint8Array, Uint8Array] {
@@ -71,7 +71,7 @@ const eddsa = {
    * @returns A boolean indicating whether the signature is valid.
    * @throws An error if the `eddsaBuild` module is not defined.
    */
-  verifyEDDSA(message: Uint8Array, signature: CircomlibSignature, pubkey: [Uint8Array, Uint8Array]) {
+  verifyEDDSA (message: Uint8Array, signature: CircomlibSignature, pubkey: [Uint8Array, Uint8Array]) {
     if (typeof eddsaBuild === 'undefined') {
       throw new Error('Invalid')
     }
