@@ -22,10 +22,9 @@ const eddsa = {
     // Derive key
     const key = eddsaBuild
       .prv2pub(privateKey)
-    // .map((element: any) =>
-    //   eddsaBuild.F.fromMontgomery(element).reverse()
-    // ) as [Uint8Array, Uint8Array]
-
+      .map((element: any) =>
+        eddsaBuild.F.fromMontgomery(element).reverse()
+      ) as [Uint8Array, Uint8Array]
     return key
   },
 
@@ -51,21 +50,16 @@ const eddsa = {
       throw new Error('Invalid')
     }
     // Get montgomery representation
-    // const montgomery = eddsaBuild.F.toMontgomery(
-    //   new Uint8Array(message).reverse()
-    // )
-
+    const montgomery = eddsaBuild.F.toMontgomery(
+      new Uint8Array(message).reverse()
+    )
     // Sign
-    const sig = eddsaBuild.signPoseidon(key, message)
-
+    const sig = eddsaBuild.signPoseidon(key, montgomery)
     // Convert R8 elements from montgomery and to BE
-
-    // TODO: see why this fails?
     const r8 = sig.R8
-    // .map((element: any) =>
-    //   eddsaBuild.F.fromMontgomery(element).reverse()
-    // )
-
+      .map((element: any) =>
+        eddsaBuild.F.fromMontgomery(element).reverse()
+      )
     return [r8[0], r8[1], bigintToUint8Array(sig.S, 32)]
   },
 
@@ -81,12 +75,23 @@ const eddsa = {
     if (typeof eddsaBuild === 'undefined') {
       throw new Error('Invalid')
     }
-    // Get montgomery representation
-    // const montgomery = eddsaBuild.F.toMontgomery(
-    //   new Uint8Array(message).reverse()
-    // )
 
-    return eddsaBuild.verifyPoseidon(message, signature, pubkey)
+    // Get montgomery representation
+    const montgomery = eddsaBuild.F.toMontgomery(
+      new Uint8Array(message).reverse()
+    )
+    const r8 = signature.R8
+      .map((element: any) =>
+        eddsaBuild.F.toMontgomery(element.reverse())
+      )
+    const newSig = {
+      R8: r8,
+      S: signature.S,
+    }
+    const newPubKey = pubkey.map((element: any) =>
+      eddsaBuild.F.toMontgomery(element.reverse())
+    ) as [Uint8Array, Uint8Array]
+    return eddsaBuild.verifyPoseidon(montgomery, newSig, newPubKey)
   }
 }
 export { eddsa }
