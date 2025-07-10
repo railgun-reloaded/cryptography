@@ -32,13 +32,13 @@ const initCircomlib = async (type: 'pure' | 'wasm') => {
  * @returns The computed Poseidon hash as a Uint8Array.
  * @throws Will throw an error if the Poseidon implementation has not been loaded.
  */
-const poseidon = (inputs: Uint8Array[]) => {
+const poseidon = (inputs: bigint[]) => {
   // prefer wasm, (dev) must be manually initialized as such.
   const p = typeof typeof poseidonBuild.wasm === 'undefined' ? poseidonBuild.pure : poseidonBuild.wasm
   if (typeof p === 'undefined') {
     throw new Error('Poseidon has not been loaded.')
   }
-  // poseidon expect input of uint8Array
+  // poseidon expect input of bigint
   return p(inputs)
 }
 
