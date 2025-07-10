@@ -1,7 +1,7 @@
 import { randomBytes } from '@noble/hashes/utils'
 
 import { poseidon } from '../poseidon/poseidon-circomlibjs'
-import { bigintToUint8Array, bytesToHex } from '../utils'
+import { bigintToUint8Array } from '../utils'
 
 import { eddsaBuild } from './eddsa'
 
@@ -33,7 +33,7 @@ const eddsa = {
    * @returns random point
    */
   genRandomPoint (): Uint8Array {
-    return poseidon([BigInt('0x' + bytesToHex(randomBytes(32)))])
+    return poseidon([randomBytes(32)])
   },
 
   /**

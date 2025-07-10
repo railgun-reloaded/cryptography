@@ -3,7 +3,12 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { eddsa, initCircomlib, poseidon, poseidonBuild, poseidonHex } from '../../../src/index'
+import {
+  eddsa, initCircomlib,
+  poseidon,
+  //  poseidon,
+  poseidonBuild, poseidonHex
+} from '../../../src/index'
 
 describe('Initialize Module', () => {
   it('PoseidonWASM', async () => {
@@ -62,7 +67,7 @@ describe('Initialize Module', () => {
 
     for (const _a of testSet) {
       counter += 1
-      poseidon([BigInt(counter), 2n, 3n])
+      poseidon([new Uint8Array([counter]), new Uint8Array([2]), new Uint8Array([3])])
     }
   })
   it('poseidonHex function test', () => {

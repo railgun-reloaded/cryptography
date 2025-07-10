@@ -1,7 +1,7 @@
 // @ts-ignore -- ignore typecheck.
 import { buildPoseidon, buildPoseidonOpt } from 'circomlibjs'
 
-import { uint8ArrayToBigInt } from '../utils'
+import { bigintToUint8Array, uint8ArrayToBigInt } from '../utils'
 
 const constructors = {
   pure: buildPoseidonOpt, // optimized js implementation
@@ -34,14 +34,17 @@ const initCircomlib = async (type: 'pure' | 'wasm') => {
  * @returns The computed Poseidon hash as a Uint8Array.
  * @throws Will throw an error if the Poseidon implementation has not been loaded.
  */
-const poseidon = (inputs: bigint[]) => {
+const poseidon = (inputs: Uint8Array[]) => {
   // prefer wasm, (dev) must be manually initialized as such.
   const p = typeof typeof poseidonBuild.wasm === 'undefined' ? poseidonBuild.pure : poseidonBuild.wasm
   if (typeof p === 'undefined') {
     throw new Error('Poseidon has not been loaded.')
   }
   // poseidon expect input of bigint
-  return p(inputs)
+  const result = p.F.fromMontgomery(
+    p(inputs.map((input) => p.F.toMontgomery(new Uint8Array(input).reverse())))
+  )
+  return result.reverse()
 }
 
 /**
@@ -54,7 +57,7 @@ const poseidon = (inputs: bigint[]) => {
  */
 const poseidonHex = (inputs: string[]) => {
   // TODO: sanitize inputs 32 bytes
-  const result = poseidon(inputs.map(BigInt))
+  const result = poseidon(inputs.map(BigInt).map(bigintToUint8Array))
   return uint8ArrayToBigInt(result)
 }
 
