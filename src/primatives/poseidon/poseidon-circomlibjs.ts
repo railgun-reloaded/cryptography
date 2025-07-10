@@ -1,6 +1,8 @@
 // @ts-ignore -- ignore typecheck.
 import { buildPoseidon, buildPoseidonOpt } from 'circomlibjs'
 
+import { uint8ArrayToBigInt } from '../utils'
+
 const constructors = {
   pure: buildPoseidonOpt, // optimized js implementation
   wasm: buildPoseidon,
@@ -42,4 +44,18 @@ const poseidon = (inputs: bigint[]) => {
   return p(inputs)
 }
 
-export { poseidonBuild, initCircomlib, poseidon }
+/**
+ * Computes a Poseidon hash for the given array of hexadecimal string inputs.
+ * This function takes an array of hexadecimal strings, converts them to BigInt,
+ * computes the Poseidon hash using the `poseidon` function, and then converts
+ * the resulting hash from a Uint8Array to a BigInt.
+ * @param inputs - An array of hexadecimal strings to be hashed.
+ * @returns The Poseidon hash as a BigInt.
+ */
+const poseidonHex = (inputs: string[]) => {
+  // TODO: sanitize inputs 32 bytes
+  const result = poseidon(inputs.map(BigInt))
+  return uint8ArrayToBigInt(result)
+}
+
+export { poseidonBuild, initCircomlib, poseidon, poseidonHex }

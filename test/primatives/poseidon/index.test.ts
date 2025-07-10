@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { initCircomlib, poseidonBuild } from '../../../src/primatives/poseidon/poseidon-circomlibjs'
+import { initCircomlib, poseidon, poseidonBuild, poseidonHex } from '../../../src/primatives/poseidon/poseidon-circomlibjs'
 
 describe('Initialize Module', () => {
   it('PoseidonWASM', async () => {
@@ -54,5 +54,19 @@ describe('Initialize Module', () => {
       poseidonBuild.pure([BigInt(counter), 2n, 3n])
     }
     console.timeEnd('optimized-forOf')
+  })
+
+  it('poseidon function test', () => {
+    const testSet = new Array(20_000)
+    testSet.forEach((_, x) => {
+      return poseidon([BigInt(x), 2n, 3n])
+    })
+  })
+  it('poseidonHex function test', () => {
+    const testSet = new Array(20_000)
+    testSet.forEach((_, x) => {
+      const result = poseidonHex([BigInt(x).toString(16), '0x1235', '0x1234'])
+      console.log('result', result)
+    })
   })
 })
