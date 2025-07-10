@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { initCircomlib, poseidon, poseidonBuild, poseidonHex } from '../../../src/primatives/poseidon/poseidon-circomlibjs'
+import { initCircomlib, poseidon, poseidonBuild, poseidonHex } from '../../../src/index'
 
 describe('Initialize Module', () => {
   it('PoseidonWASM', async () => {
