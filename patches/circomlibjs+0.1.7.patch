@@ -1,5 +1,23 @@
+diff --git a/node_modules/circomlibjs/build/main.cjs b/node_modules/circomlibjs/build/main.cjs
+index 41b3edb..0d4d63d 100644
+--- a/node_modules/circomlibjs/build/main.cjs
++++ b/node_modules/circomlibjs/build/main.cjs
+@@ -25681,11 +25681,11 @@ class MimcSponge {
+     }
+ }
+ 
+-async function buildEddsa() {
++async function buildEddsa(injected = false) {
+     const babyJub = await buildBabyJub();
+     const pedersenHash = await buildPedersenHash();
+     const mimc7 = await buildMimc7();
+-    const poseidon = await buildPoseidon$2();
++    const poseidon = typeof injected !== 'undefined' ? injected: await buildPoseidon$2();
+     const mimcSponge = await buildMimcSponge();
+     return new Eddsa(babyJub, pedersenHash, mimc7, poseidon, mimcSponge);
+ }
 diff --git a/node_modules/circomlibjs/src/eddsa.js b/node_modules/circomlibjs/src/eddsa.js
-index 426971c..a6ae9fc 100644
+index 426971c..b233e13 100644
 --- a/node_modules/circomlibjs/src/eddsa.js
 +++ b/node_modules/circomlibjs/src/eddsa.js
 @@ -6,11 +6,11 @@ import { buildPoseidon } from "./poseidon_wasm.js";
