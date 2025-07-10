@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-expressions */
 
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
