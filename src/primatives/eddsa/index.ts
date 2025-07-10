@@ -51,12 +51,12 @@ const eddsa = {
       throw new Error('Invalid')
     }
     // Get montgomery representation
-    const montgomery = eddsaBuild.F.toMontgomery(
-      new Uint8Array(message).reverse()
-    )
+    // const montgomery = eddsaBuild.F.toMontgomery(
+    //   new Uint8Array(message).reverse()
+    // )
 
     // Sign
-    const sig = eddsaBuild.signPoseidon(key, montgomery)
+    const sig = eddsaBuild.signPoseidon(key, message)
 
     // Convert R8 elements from montgomery and to BE
 
@@ -82,11 +82,11 @@ const eddsa = {
       throw new Error('Invalid')
     }
     // Get montgomery representation
-    const montgomery = eddsaBuild.F.toMontgomery(
-      new Uint8Array(message).reverse()
-    )
+    // const montgomery = eddsaBuild.F.toMontgomery(
+    //   new Uint8Array(message).reverse()
+    // )
 
-    return eddsaBuild.verifyPoseidon(montgomery, signature, pubkey)
+    return eddsaBuild.verifyPoseidon(message, signature, pubkey)
   }
 }
 export { eddsa }
