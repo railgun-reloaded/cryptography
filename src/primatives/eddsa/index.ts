@@ -51,19 +51,20 @@ const eddsa = {
       throw new Error('Invalid')
     }
     // Get montgomery representation
-    // const montgomery = eddsaBuild.F.toMontgomery(
-    //   new Uint8Array(message).reverse()
-    // )
+    const montgomery = eddsaBuild.F.toMontgomery(
+      new Uint8Array(message).reverse()
+    )
 
     // Sign
-    const sig = eddsaBuild.signPoseidon(key, message)
+    const sig = eddsaBuild.signPoseidon(key, montgomery)
 
     // Convert R8 elements from montgomery and to BE
-    // const r8 = sig.R8.map((element: any) =>
+    const r8 = sig.R8
+    // .map((element: any) =>
     //   eddsaBuild.F.fromMontgomery(element).reverse()
     // )
 
-    return [sig.R8[0], sig.R8[1], bigintToUint8Array(sig.S, 32)]
+    return [r8[0], r8[1], bigintToUint8Array(sig.S, 32)]
   },
 
   /**
@@ -76,16 +77,25 @@ const eddsa = {
    */
   verifyEDDSA(message: Uint8Array, signature: CircomlibSignature, pubkey: [Uint8Array, Uint8Array]) {
     if (typeof eddsaBuild === 'undefined') {
-      console.log('UNDEFINED')
       throw new Error('Invalid')
     }
-    console.log('verifyings')
     // Get montgomery representation
-    // const montgomery = eddsaBuild.F.toMontgomery(
-    //   new Uint8Array(message).reverse()
-    // )
+    const montgomery = eddsaBuild.F.toMontgomery(
+      new Uint8Array(message).reverse()
+    )
+    const newSig: {
+      R8: Uint8Array[],
+      S: bigint
+    } = {
+      R8: [],
+      S: signature.S
+    }
+    newSig.R8 = signature.R8.map((element) => {
+      return eddsaBuild.F.fromMontgomery(element).reverse()
+    })
+
     // console.log(eddsaBuild)
-    return eddsaBuild.verifyPoseidon(message, signature, pubkey)
+    return eddsaBuild.verifyPoseidon(montgomery, signature, pubkey)
   }
 }
 export { eddsa }
