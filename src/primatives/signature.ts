@@ -27,15 +27,14 @@ const formatEthMessage = (message: string): Uint8Array => {
  * @throws {Error} If the provided private key is invalid.
  * @throws {Error} If the generated signature is invalid.
  */
-const rawSignature = async (message: string, privateKey: string): Promise<secp.RecoveredSignature> => {
+const rawSignature = async (message: string, privateKey: Uint8Array): Promise<secp.RecoveredSignature> => {
   console.log(privateKey)
-  const testPrivKey = secp.utils.randomPrivateKey()
-  if (!secp.utils.isValidPrivateKey(testPrivKey)) {
+  if (!secp.utils.isValidPrivateKey(privateKey)) {
     throw new Error('Invalid private key.')
   }
   const formattedMsg = formatEthMessage(message)
-  const pubKey = secp.getPublicKey(testPrivKey) // compressed true by default
-  const signature = await secp.signAsync(formattedMsg, testPrivKey)
+  const pubKey = secp.getPublicKey(privateKey) // compressed true by default
+  const signature = await secp.signAsync(formattedMsg, privateKey)
   const isValid = secp.verify(signature, formattedMsg, pubKey)
   if (!isValid) {
     throw new Error('Signature is invalid.')
@@ -43,4 +42,16 @@ const rawSignature = async (message: string, privateKey: string): Promise<secp.R
   return signature
 }
 
-export { rawSignature, formatEthMessage }
+/**
+ * Converts a hexadecimal representation of a public key into a `Point` object.
+ * @param pub - The hexadecimal string representing the public key.
+ * @returns The `Point` object derived from the provided hexadecimal public key.
+ */
+const pointConversion = (
+  pub: secp.Hex
+) => {
+  const point = secp.Point.fromHex(pub)
+  return point
+}
+
+export { rawSignature, formatEthMessage, pointConversion }
