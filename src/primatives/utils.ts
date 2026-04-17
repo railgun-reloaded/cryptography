@@ -44,16 +44,28 @@ const keccak256 = (bytes: Uint8Array): Uint8Array => {
   return keccak_256(bytes)
 }
 
+const HEX_CHARACTERS = /^[0-9a-fA-F]*$/
+
 /**
  * Converts a hexadecimal string into a Uint8Array of bytes.
- * @param hex - The hexadecimal string to convert. It should contain an even number of characters.
+ * @param hex - The hexadecimal string to convert (with or without 0x prefix). Must contain an even number of hex characters.
  * @returns A Uint8Array representing the bytes of the hexadecimal string.
- * @throws Will throw an error if the input string contains invalid hexadecimal characters.
+ * @throws Will throw an error if the input string contains invalid hexadecimal characters or has odd length.
  */
-const hexToBytes = (hex: string) => {
-  const bytes = new Uint8Array(hex.length / 2)
+const hexToBytes = (hex: string): Uint8Array => {
+  const stripped = hex.startsWith('0x') ? hex.slice(2) : hex
+
+  if (stripped.length === 0) {
+    return new Uint8Array(0)
+  }
+
+  if (stripped.length % 2 !== 0 || !HEX_CHARACTERS.test(stripped)) {
+    throw new Error('Invalid hex string')
+  }
+
+  const bytes = new Uint8Array(stripped.length / 2)
   for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(hex.substr(i * 2, 2), 16)
+    bytes[i] = parseInt(stripped.substring(i * 2, i * 2 + 2), 16)
   }
   return bytes
 }

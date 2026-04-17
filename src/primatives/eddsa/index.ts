@@ -5,7 +5,7 @@ import { bigintToUint8Array } from '../utils'
 
 import { eddsaBuild } from './eddsa'
 
-interface CircomlibSignature {
+type CircomlibSignature = {
   R8: [Uint8Array, Uint8Array];
   S: bigint;
 }
