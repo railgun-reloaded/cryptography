@@ -30,7 +30,6 @@
     "eslint": "^9.24.0",
     "typescript": "^5.8.3"
   },
-  "packageManager": "yarn@1.22.22",
   "dependencies": {
     "@noble/hashes": "^1.8.0",
     "@noble/secp256k1": "^2.3.0",
