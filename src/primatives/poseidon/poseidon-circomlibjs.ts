@@ -1,7 +1,6 @@
+import { bigIntToBytes, bytesToBigInt } from '@railgun-reloaded/bytes'
 // @ts-ignore -- ignore typecheck.
 import { buildPoseidon, buildPoseidonOpt } from 'circomlibjs'
-
-import { bigintToUint8Array, uint8ArrayToBigInt } from '../utils'
 
 const constructors = {
   pure: buildPoseidonOpt, // optimized js implementation
@@ -57,8 +56,8 @@ const poseidon = (inputs: Uint8Array[]): Uint8Array => {
  */
 const poseidonHex = (inputs: string[]) => {
   // TODO: sanitize inputs 32 bytes
-  const result = poseidon(inputs.map(BigInt).map(bigintToUint8Array))
-  return uint8ArrayToBigInt(result)
+  const result = poseidon(inputs.map((input) => bigIntToBytes(BigInt(input), 32)))
+  return bytesToBigInt(result)
 }
 
 export { poseidonBuild, initCircomlib, poseidon, poseidonHex }

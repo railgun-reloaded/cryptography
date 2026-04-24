@@ -1,4 +1,6 @@
-import { bigintToUint8Array, poseidonLib, uint8ArrayToBigInt } from '../index'
+import { bigIntToBytes, bytesToBigInt } from '@railgun-reloaded/bytes'
+
+import { poseidonLib } from '../index'
 
 type PoseidonFunc = (input: (bigint | number | string)[], nOuts?: number) => bigint
 const poseidonFuncs: PoseidonFunc[] = []
@@ -36,7 +38,7 @@ const getPoseidonFunc = (n: number) => {
  * Computes the Poseidon hash function for the given inputs.
  * @param inputs - An array of inputs to the Poseidon function. Each input can be of type `bigint`, `number`, `string`, or `Uint8Array`.
  *                 If the input is a `string` or `number`, it will be converted to `bigint`. If the input is a `Uint8Array`,
- *                 it will be converted to `bigint` using the `uint8ArrayToBigInt` function.
+ *                 it will be converted to `bigint` using the `bytesToBigInt` function.
  * @param returnBigInt - A boolean indicating whether the output should be returned as `bigint`. If `false`, the output will be
  *                       converted to `Uint8Array`. Defaults to `false`.
  * @param nOuts - The number of outputs to generate. Defaults to `1` if not specified.
@@ -69,7 +71,7 @@ const poseidonFunc = (inputs: (bigint | number | string)[], returnBigInt = false
     } else if (typeof input === 'number') {
       inputs[i] = BigInt(input)
     } else if (input instanceof Uint8Array) {
-      inputs[i] = uint8ArrayToBigInt(input) // Ensure the input is a valid Uint8Array
+      inputs[i] = bytesToBigInt(input) // Ensure the input is a valid Uint8Array
     } else if (typeof inputs[i] !== 'bigint') {
       throw new Error(`Invalid input type: ${typeof input}`)
     }
@@ -99,14 +101,14 @@ const poseidonFunc = (inputs: (bigint | number | string)[], returnBigInt = false
     }
   } else {
     if (nOuts === 1) {
-      return bigintToUint8Array(output as bigint)
+      return bigIntToBytes(output as bigint, 32)
     } else {
       // If nOuts > 1, return an array of uint8arrays
       if (!Array.isArray(output) || output.length !== nOuts) {
         throw new Error(`Expected output to be an array of length ${nOuts}`)
       }
       return output.map((out: bigint) => {
-        return bigintToUint8Array(out as bigint)
+        return bigIntToBytes(out as bigint, 32)
       })
     }
   }

@@ -1,7 +1,7 @@
 import { randomBytes } from '@noble/hashes/utils'
+import { bigIntToBytes } from '@railgun-reloaded/bytes'
 
 import { poseidon } from '../poseidon/poseidon-circomlibjs'
-import { bigintToUint8Array } from '../utils'
 
 import { eddsaBuild } from './eddsa'
 
@@ -60,7 +60,7 @@ const eddsa = {
       .map((element: any) =>
         eddsaBuild.F.fromMontgomery(element).reverse()
       )
-    return [r8[0], r8[1], bigintToUint8Array(sig.S, 32)]
+    return [r8[0], r8[1], bigIntToBytes(sig.S, 32)]
   },
 
   /**

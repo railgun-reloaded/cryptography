@@ -1,6 +1,6 @@
 // export direct library access.
 export * as poseidonLib from 'poseidon-lite'
-export * from './utils'
+export * from './keccak'
 // export lite-wrapper functions, these are sync methods.
 export * from './poseidon/poseidon-lite'
 export * from './poseidon/poseidon-circomlibjs'

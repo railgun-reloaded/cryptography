@@ -2,8 +2,9 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { hexToBytes } from '@noble/hashes/utils'
+import { bytesToBigInt } from '@railgun-reloaded/bytes'
 
-import { keccak256, poseidonFunc, uint8ArrayToBigInt } from '../src'
+import { keccak256, poseidonFunc } from '../src'
 
 describe('Cryptography Module', () => {
   it('Poseidon', () => {
@@ -64,8 +65,8 @@ describe('Cryptography Module', () => {
         const bytes = hexToBytes(vector.preImage)
         const hash = keccak256(bytes)
         const arrayHash = keccak256(vector.array)
-        const hashBigint = uint8ArrayToBigInt(hash).toString(16)
-        const arrayHashBigInt = uint8ArrayToBigInt(arrayHash).toString(16)
+        const hashBigint = bytesToBigInt(hash).toString(16)
+        const arrayHashBigInt = bytesToBigInt(arrayHash).toString(16)
         assert(hashBigint === vector.result)
         assert(arrayHashBigInt === vector.result)
       }
