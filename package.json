@@ -33,7 +33,7 @@
   "dependencies": {
     "@noble/hashes": "^1.8.0",
     "@noble/secp256k1": "^2.3.0",
-    "@railgun-reloaded/bytes": "git+https://github.com/railgun-reloaded/bytes.git#main",
+    "@railgun-reloaded/bytes": "git+https://github.com/railgun-reloaded/bytes.git#dev",
     "circomlibjs": "^0.1.7",
     "poseidon-lite": "^0.3.0"
   }
