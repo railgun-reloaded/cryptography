@@ -55,7 +55,7 @@ const poseidon = (inputs: Uint8Array[]): Uint8Array => {
  * @returns The Poseidon hash as a BigInt.
  */
 const poseidonHex = (inputs: string[]) => {
-  // TODO: sanitize inputs 32 bytes
+  // bigIntToBytes throws BigIntOverflow if a value exceeds 32 bytes.
   const result = poseidon(inputs.map((input) => bigIntToBytes(BigInt(input), 32)))
   return bytesToBigInt(result)
 }
