@@ -6,7 +6,7 @@ import { bytesToHex } from '@noble/hashes/utils'
 
 import { autoInitializeEddsa, eddsa, initCircomlib } from '../../../src'
 
-describe.only('EDDSA module', () => {
+describe('EDDSA module', () => {
   it('Should sign and verify signature', async () => {
     await initCircomlib('pure')
     await autoInitializeEddsa()

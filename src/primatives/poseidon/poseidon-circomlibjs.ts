@@ -1,4 +1,4 @@
-import { bigIntToBytes, bytesToBigInt } from '@railgun-reloaded/bytes'
+import { bigIntToBytes, bytesToBigInt, padBytesLeft } from '@railgun-reloaded/bytes'
 // @ts-ignore -- ignore typecheck.
 import { buildPoseidon, buildPoseidonOpt } from 'circomlibjs'
 
@@ -29,19 +29,28 @@ const initCircomlib = async (type: 'pure' | 'wasm') => {
 /**
  * Computes the Poseidon hash for the given inputs using the appropriate implementation
  * (either WebAssembly or pure JavaScript) based on availability.
- * @param inputs - An array of Uint8Array objects representing the input data to be hashed.
- * @returns The computed Poseidon hash as a Uint8Array.
+ *
+ * Inputs shorter than 32 bytes are left-padded with zeros to match the
+ * BabyJubJub field size. Inputs longer than 32 bytes throw `ByteLengthExceeded`
+ * — they cannot represent a valid field element.
+ * @param inputs - An array of byte arrays, each at most 32 bytes, representing
+ * the input data to be hashed.
+ * @returns The computed Poseidon hash as a 32-byte Uint8Array.
  * @throws Will throw an error if the Poseidon implementation has not been loaded.
+ * @throws {BytesError} `code: 'ByteLengthExceeded'` if any input is longer than 32 bytes.
  */
 const poseidon = (inputs: Uint8Array[]): Uint8Array => {
-  // prefer wasm, (dev) must be manually initialized as such.
-  const p = typeof typeof poseidonBuild.wasm === 'undefined' ? poseidonBuild.pure : poseidonBuild.wasm
-  if (typeof p === 'undefined') {
+  // Prefer wasm if it has been initialized; otherwise fall back to pure.
+  const p = poseidonBuild.wasm ?? poseidonBuild.pure
+  if (p === null) {
     throw new Error('Poseidon has not been loaded.')
   }
+  // Pad each input to the 32-byte field size before passing to circomlibjs.
+  // Strict mode rejects >32-byte inputs since they can't represent a field element.
+  const padded = inputs.map((input) => padBytesLeft(input, 32, { strict: true }))
   // poseidon expect input of bigint
   const result = p.F.fromMontgomery(
-    p(inputs.map((input) => p.F.toMontgomery(new Uint8Array(input).reverse())))
+    p(padded.map((input) => p.F.toMontgomery(new Uint8Array(input).reverse())))
   )
   return result.reverse()
 }

@@ -78,7 +78,7 @@ describe('Initialize Module', () => {
       poseidonHex(['0x' + BigInt(counter).toString(16), '0x1234', '0x1235'])
     }
   })
-  it.only('should have same privekey', () => {
+  it('should have same privekey', () => {
     const publickey = new Uint8Array([
       207, 255, 35, 123, 225, 202, 70, 139,
       250, 120, 235, 158, 5, 168, 39, 1,
@@ -102,5 +102,36 @@ describe('Initialize Module', () => {
 
     const privkey = eddsa.privateKeyToPublicKey(publickey)
     assert.deepStrictEqual(expectedPrivKey, privkey)
+  })
+})
+
+describe('poseidon dispatch', () => {
+  it('falls back to pure when only pure is initialized', async () => {
+    const previousWasm = poseidonBuild.wasm
+    poseidonBuild.wasm = null
+    await initCircomlib('pure')
+    try {
+      const out = poseidon([new Uint8Array([1]), new Uint8Array([2])])
+      assert(out instanceof Uint8Array)
+      assert.equal(out.length, 32)
+    } finally {
+      poseidonBuild.wasm = previousWasm
+    }
+  })
+
+  it('throws when neither pure nor wasm has been initialized', () => {
+    const previousWasm = poseidonBuild.wasm
+    const previousPure = poseidonBuild.pure
+    poseidonBuild.wasm = null
+    poseidonBuild.pure = null
+    try {
+      assert.throws(
+        () => poseidon([new Uint8Array([1]), new Uint8Array([2])]),
+        /Poseidon has not been loaded/
+      )
+    } finally {
+      poseidonBuild.wasm = previousWasm
+      poseidonBuild.pure = previousPure
+    }
   })
 })

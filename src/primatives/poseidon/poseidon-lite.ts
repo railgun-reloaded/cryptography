@@ -50,14 +50,15 @@ const getPoseidonFunc = (n: number) => {
  * @throws {Error} If the output type does not match the expected type (`bigint` or `Uint8Array`).
  * @throws {Error} If the number of outputs does not match the specified `nOuts`.
  */
-const poseidonFunc = (inputs: (bigint | number | string)[], returnBigInt = false, nOuts?: number) => {
+const poseidonFunc = (inputs: (bigint | number | string | Uint8Array)[], returnBigInt = false, nOuts?: number) => {
   const inputLen = inputs.length
   if (nOuts === undefined) {
     nOuts = 1 // Default to 1 output if not specified
   }
 
+  // Library exposes poseidon1..poseidon16, but the RAILGUN protocol uses ≤ 13.
   if (inputLen < 1 || inputLen > 14) {
-    throw new Error('Poseidon function index must be between 1 and 16')
+    throw new Error('Poseidon function index must be between 1 and 14')
   }
 
   // check if the inputs are uint8arrays, if they are convert to bigint
@@ -78,7 +79,8 @@ const poseidonFunc = (inputs: (bigint | number | string)[], returnBigInt = false
   }
 
   const func = getPoseidonFunc(inputLen)!
-  const output = func(inputs, nOuts)
+  // The loop above mutates each Uint8Array entry to a bigint; cast to match func's narrower input type.
+  const output = func(inputs as (bigint | number | string)[], nOuts)
   // convert this back into uint8array if nOuts is 1
   if (returnBigInt) {
     if (nOuts === 1) {

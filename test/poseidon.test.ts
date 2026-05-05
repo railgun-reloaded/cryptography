@@ -24,7 +24,6 @@ describe('poseidonFunc', () => {
 
   it('should compute Poseidon hash with Uint8Array inputs and return bigint output', () => {
     const inputs = [new Uint8Array([1]), new Uint8Array([2]), new Uint8Array([3])]
-    // @ts-expect-error
     const result = poseidonFunc(inputs, true)
     assert(typeof result === 'bigint')
   })
@@ -44,14 +43,14 @@ describe('poseidonFunc', () => {
     const inputs: any = []
     try {
       poseidonFunc(inputs)
-      assert(false, 'Poseidon function index must be between 1 and 16')
+      assert(false, 'Poseidon function index must be between 1 and 14')
     } catch (error) {
 
     }
     const tooManyInputs = Array(15).fill(BigInt(1))
     try {
       poseidonFunc(tooManyInputs)
-      assert(false, 'Poseidon function index must be between 1 and 16')
+      assert(false, 'Poseidon function index must be between 1 and 14')
     } catch (error) {
 
     }
