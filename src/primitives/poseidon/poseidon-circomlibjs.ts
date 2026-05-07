@@ -1,4 +1,4 @@
-import { bigIntToBytes, bytesToBigInt, padBytesLeft } from '@railgun-reloaded/bytes'
+import { padBytesLeft } from '@railgun-reloaded/bytes'
 // @ts-ignore -- ignore typecheck.
 import { buildPoseidon, buildPoseidonOpt } from 'circomlibjs'
 
@@ -55,18 +55,4 @@ const poseidon = (inputs: Uint8Array[]): Uint8Array => {
   return result.reverse()
 }
 
-/**
- * Computes a Poseidon hash for the given array of hexadecimal string inputs.
- * This function takes an array of hexadecimal strings, converts them to BigInt,
- * computes the Poseidon hash using the `poseidon` function, and then converts
- * the resulting hash from a Uint8Array to a BigInt.
- * @param inputs - An array of hexadecimal strings to be hashed.
- * @returns The Poseidon hash as a BigInt.
- */
-const poseidonHex = (inputs: string[]) => {
-  // bigIntToBytes throws BigIntOverflow if a value exceeds 32 bytes.
-  const result = poseidon(inputs.map((input) => bigIntToBytes(BigInt(input), 32)))
-  return bytesToBigInt(result)
-}
-
-export { poseidonBuild, initCircomlib, poseidon, poseidonHex }
+export { poseidonBuild, initCircomlib, poseidon }

@@ -1,0 +1,87 @@
+import { randomBytes } from '@noble/hashes/utils'
+import { bigIntToBytes } from '@railgun-reloaded/bytes'
+
+import { poseidon } from '../poseidon/poseidon-circomlibjs'
+
+import { assertEddsaReady } from './eddsa'
+
+interface CircomlibSignature {
+  R8: [Uint8Array, Uint8Array];
+  S: bigint;
+}
+
+const eddsa = {
+  /**
+   * Convert a babyJubJub private key to its public key.
+   * @param privateKey - 32-byte private key.
+   * @returns The public key as a tuple of two 32-byte coordinates.
+   * @throws If `initializeEddsa` has not been awaited.
+   */
+  privateKeyToPublicKey (privateKey: Uint8Array): [Uint8Array, Uint8Array] {
+    const build = assertEddsaReady()
+    const [x, y] = build.prv2pub(privateKey)
+    return [
+      build.F.fromMontgomery(x).reverse() as Uint8Array,
+      build.F.fromMontgomery(y).reverse() as Uint8Array,
+    ]
+  },
+
+  /**
+   * Generate a random babyJubJub field element by hashing 32 random bytes.
+   * @returns A 32-byte field element.
+   */
+  genRandomPoint (): Uint8Array {
+    return poseidon([randomBytes(32)])
+  },
+
+  /**
+   * Sign a message under the babyJubJub EDDSA scheme using Poseidon as the
+   * hash function.
+   * @param key - 32-byte private key.
+   * @param message - Message bytes to sign.
+   * @returns Signature as a 3-tuple `[R8x, R8y, S]`, each 32 bytes.
+   * @throws If `initializeEddsa` has not been awaited.
+   */
+  signPoseidon (
+    key: Uint8Array,
+    message: Uint8Array
+  ): [Uint8Array, Uint8Array, Uint8Array] {
+    const build = assertEddsaReady()
+    const montgomery = build.F.toMontgomery(new Uint8Array(message).reverse())
+    const sig = build.signPoseidon(key, montgomery)
+    const r8: [Uint8Array, Uint8Array] = [
+      build.F.fromMontgomery(sig.R8[0]).reverse() as Uint8Array,
+      build.F.fromMontgomery(sig.R8[1]).reverse() as Uint8Array,
+    ]
+    return [r8[0], r8[1], bigIntToBytes(sig.S, 32)]
+  },
+
+  /**
+   * Verify a babyJubJub EDDSA signature created with Poseidon.
+   * @param message - Original message bytes.
+   * @param signature - Signature decoded into `{ R8, S }` shape.
+   * @param pubkey - Public key tuple matching the signing key.
+   * @returns True when the signature verifies.
+   * @throws If `initializeEddsa` has not been awaited.
+   */
+  verifyEDDSA (
+    message: Uint8Array,
+    signature: CircomlibSignature,
+    pubkey: [Uint8Array, Uint8Array]
+  ): boolean {
+    const build = assertEddsaReady()
+    const montgomery = build.F.toMontgomery(new Uint8Array(message).reverse())
+    const r8: [Uint8Array, Uint8Array] = [
+      build.F.toMontgomery(signature.R8[0].reverse()),
+      build.F.toMontgomery(signature.R8[1].reverse()),
+    ]
+    const newPubKey: [Uint8Array, Uint8Array] = [
+      build.F.toMontgomery(pubkey[0].reverse()),
+      build.F.toMontgomery(pubkey[1].reverse()),
+    ]
+    return build.verifyPoseidon(montgomery, { R8: r8, S: signature.S }, newPubKey)
+  },
+}
+
+export type { CircomlibSignature }
+export { eddsa }
