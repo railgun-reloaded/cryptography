@@ -1,7 +1,4 @@
-import { randomBytes } from '@noble/hashes/utils'
 import { bigIntToBytes } from '@railgun-reloaded/bytes'
-
-import { poseidon } from '../poseidon/poseidon-circomlibjs'
 
 import { assertEddsaReady } from './eddsa'
 
@@ -24,14 +21,6 @@ const eddsa = {
       build.F.fromMontgomery(x).reverse() as Uint8Array,
       build.F.fromMontgomery(y).reverse() as Uint8Array,
     ]
-  },
-
-  /**
-   * Generate a random babyJubJub field element by hashing 32 random bytes.
-   * @returns A 32-byte field element.
-   */
-  genRandomPoint (): Uint8Array {
-    return poseidon([randomBytes(32)])
   },
 
   /**

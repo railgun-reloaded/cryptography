@@ -86,6 +86,14 @@ test('AES-256-CTR rejects wrong-length keys', (t) => {
   )
 })
 
+test('AES-256-CTR rejects wrong-length iv on decrypt', (t) => {
+  const ct = AES.encryptCTR([new Uint8Array([1])], key32())
+  t.exception(
+    () => AES.decryptCTR({ ...ct, iv: new Uint8Array(8) }, key32()),
+    /Invalid iv length/
+  )
+})
+
 test('AES.getRandomIV returns a fresh 16-byte iv each call', (t) => {
   const a = AES.getRandomIV()
   const b = AES.getRandomIV()
