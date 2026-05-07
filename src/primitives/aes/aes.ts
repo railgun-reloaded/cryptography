@@ -14,6 +14,11 @@ type CiphertextCTR = {
 }
 
 const KEY_BYTES = 32
+// 16-byte (128-bit) IVs are kept for wire-format compatibility with existing
+// at-rest encrypted data (e.g. wallet master keys) produced by earlier
+// versions. NIST SP 800-38D recommends 96-bit IVs for AES-GCM; switching
+// here would break decryption of every existing ciphertext, so a change
+// must be paired with a migration.
 const IV_BYTES = 16
 const TAG_BYTES = 16
 
@@ -66,23 +71,23 @@ class AES {
    * @throws If the key, iv, or tag length is wrong, or the auth tag fails.
    */
   static decryptGCM (ciphertext: Ciphertext, key: Uint8Array): Uint8Array[] {
-    try {
-      if (key.byteLength !== KEY_BYTES) {
-        throw new Error(
-          `Invalid key length. Expected ${KEY_BYTES} bytes. Received ${key.byteLength} bytes.`
-        )
-      }
-      if (ciphertext.iv.byteLength !== IV_BYTES) {
-        throw new Error(
-          `Invalid iv length. Expected ${IV_BYTES} bytes. Received ${ciphertext.iv.byteLength} bytes.`
-        )
-      }
-      if (ciphertext.tag.byteLength !== TAG_BYTES) {
-        throw new Error(
-          `Invalid tag length. Expected ${TAG_BYTES} bytes. Received ${ciphertext.tag.byteLength} bytes.`
-        )
-      }
+    if (key.byteLength !== KEY_BYTES) {
+      throw new Error(
+        `Invalid key length. Expected ${KEY_BYTES} bytes. Received ${key.byteLength} bytes.`
+      )
+    }
+    if (ciphertext.iv.byteLength !== IV_BYTES) {
+      throw new Error(
+        `Invalid iv length. Expected ${IV_BYTES} bytes. Received ${ciphertext.iv.byteLength} bytes.`
+      )
+    }
+    if (ciphertext.tag.byteLength !== TAG_BYTES) {
+      throw new Error(
+        `Invalid tag length. Expected ${TAG_BYTES} bytes. Received ${ciphertext.tag.byteLength} bytes.`
+      )
+    }
 
+    try {
       const decipher = createDecipheriv('aes-256-gcm', key, ciphertext.iv, { authTagLength: TAG_BYTES })
       decipher.setAuthTag(ciphertext.tag)
 

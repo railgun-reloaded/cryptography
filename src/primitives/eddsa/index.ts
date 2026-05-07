@@ -72,12 +72,12 @@ const eddsa = {
     const build = assertEddsaReady()
     const montgomery = build.F.toMontgomery(new Uint8Array(message).reverse())
     const r8: [Uint8Array, Uint8Array] = [
-      build.F.toMontgomery(signature.R8[0].reverse()),
-      build.F.toMontgomery(signature.R8[1].reverse()),
+      build.F.toMontgomery(new Uint8Array(signature.R8[0]).reverse()),
+      build.F.toMontgomery(new Uint8Array(signature.R8[1]).reverse()),
     ]
     const newPubKey: [Uint8Array, Uint8Array] = [
-      build.F.toMontgomery(pubkey[0].reverse()),
-      build.F.toMontgomery(pubkey[1].reverse()),
+      build.F.toMontgomery(new Uint8Array(pubkey[0]).reverse()),
+      build.F.toMontgomery(new Uint8Array(pubkey[1]).reverse()),
     ]
     return build.verifyPoseidon(montgomery, { R8: r8, S: signature.S }, newPubKey)
   },

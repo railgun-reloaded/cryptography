@@ -32,7 +32,24 @@ test('AES-256-GCM rejects wrong-length keys on encrypt', (t) => {
 
 test('AES-256-GCM rejects wrong-length keys on decrypt', (t) => {
   const ct = AES.encryptGCM([new Uint8Array([1])], key32())
-  t.exception(() => AES.decryptGCM(ct, new Uint8Array(16)), /Unable to decrypt ciphertext/)
+  t.exception(() => AES.decryptGCM(ct, new Uint8Array(16)), /Invalid key length/)
+})
+
+test('AES-256-GCM rejects wrong-length iv on decrypt', (t) => {
+  const ct = AES.encryptGCM([new Uint8Array([1])], key32())
+  t.exception(
+    () => AES.decryptGCM({ ...ct, iv: new Uint8Array(8) }, key32()),
+    /Invalid iv length/
+  )
+})
+
+test('AES-256-GCM rejects wrong-length tag on decrypt', (t) => {
+  const key = key32()
+  const ct = AES.encryptGCM([new Uint8Array([1])], key)
+  t.exception(
+    () => AES.decryptGCM({ ...ct, tag: new Uint8Array(8) }, key),
+    /Invalid tag length/
+  )
 })
 
 test('AES-256-GCM detects tag tampering', (t) => {

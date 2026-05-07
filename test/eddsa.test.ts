@@ -27,6 +27,37 @@ test('eddsa: signPoseidon roundtrip verifies under verifyEDDSA', async (t) => {
   t.ok(verified, 'signature verifies under the matching public key')
 })
 
+test('eddsa: verifyEDDSA does not mutate signature or pubkey arrays', async (t) => {
+  await initCircomlib('pure')
+  await initializeEddsa()
+
+  const privateKey = new Uint8Array(randomBytes(32))
+  const message = new Uint8Array(randomBytes(32))
+  const pubKey = eddsa.privateKeyToPublicKey(privateKey)
+  const signature = eddsa.signPoseidon(privateKey, message)
+
+  const sigSnapshot: [Uint8Array, Uint8Array] = [
+    new Uint8Array(signature[0]!),
+    new Uint8Array(signature[1]!),
+  ]
+  const pubSnapshot: [Uint8Array, Uint8Array] = [
+    new Uint8Array(pubKey[0]),
+    new Uint8Array(pubKey[1]),
+  ]
+
+  const sBigInt = BigInt('0x' + bytesToHex(signature[2]!))
+  eddsa.verifyEDDSA(message, { R8: [signature[0]!, signature[1]!], S: sBigInt }, pubKey)
+
+  t.alike(signature[0], sigSnapshot[0], 'R8x not mutated')
+  t.alike(signature[1], sigSnapshot[1], 'R8y not mutated')
+  t.alike(pubKey[0], pubSnapshot[0], 'pubKey x not mutated')
+  t.alike(pubKey[1], pubSnapshot[1], 'pubKey y not mutated')
+
+  // Second verify call must still succeed — would fail if the first call corrupted inputs.
+  const second = eddsa.verifyEDDSA(message, { R8: [signature[0]!, signature[1]!], S: sBigInt }, pubKey)
+  t.ok(second, 'second verify still succeeds')
+})
+
 test('eddsa: known public key from a fixed input', async (t) => {
   await initCircomlib('pure')
   await initializeEddsa()
