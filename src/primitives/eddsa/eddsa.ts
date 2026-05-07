@@ -28,13 +28,12 @@ let eddsaBuild: EddsaBuild | undefined
  * Initialize the circomlibjs EDDSA build. Must be awaited before any
  * `eddsa.*` operation.
  *
- * The optional `injectPoseidon` parameter is accepted for backwards
- * compatibility but currently ignored; making it effective would require a
- * patched circomlibjs.
- * @param _injectPoseidon - Ignored.
+ * circomlibjs builds its own internal poseidon instance. Sharing the
+ * existing `poseidonBuild` is not supported here because circomlibjs's
+ * upstream `buildEddsa` does not accept a poseidon argument.
  * @returns Resolves once the EDDSA build is ready.
  */
-const initializeEddsa = async (_injectPoseidon?: unknown): Promise<void> => {
+const initializeEddsa = async (): Promise<void> => {
   eddsaBuild = (await buildEddsa()) as EddsaBuild
 }
 

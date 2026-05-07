@@ -1,4 +1,5 @@
 export { keccak256 } from './keccak'
+export { sha256 } from './hash'
 export { poseidon, poseidonBuild, initCircomlib } from './poseidon/poseidon-circomlibjs'
 export { poseidonFunc } from './poseidon/poseidon-lite'
 export { eddsa } from './eddsa'
