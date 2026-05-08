@@ -1,11 +1,12 @@
+import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
+import { test } from 'node:test'
 
 import { bytesToHex } from '@noble/hashes/utils'
-import { test } from 'brittle'
 
 import { eddsa, initCircomlib, initializeEddsa } from '../src/index'
 
-test('eddsa: signPoseidon roundtrip verifies under verifyEDDSA', async (t) => {
+test('eddsa: signPoseidon roundtrip verifies under verifyEDDSA', async () => {
   await initCircomlib('pure')
   await initializeEddsa()
 
@@ -14,7 +15,7 @@ test('eddsa: signPoseidon roundtrip verifies under verifyEDDSA', async (t) => {
   const pubKey = eddsa.privateKeyToPublicKey(privateKey)
   const signature = eddsa.signPoseidon(privateKey, message)
 
-  t.is(signature.length, 3, 'signature is a 3-tuple [R8x, R8y, S]')
+  assert.equal(signature.length, 3, 'signature is a 3-tuple [R8x, R8y, S]')
 
   const verified = eddsa.verifyEDDSA(
     message,
@@ -24,10 +25,10 @@ test('eddsa: signPoseidon roundtrip verifies under verifyEDDSA', async (t) => {
     },
     pubKey
   )
-  t.ok(verified, 'signature verifies under the matching public key')
+  assert.ok(verified, 'signature verifies under the matching public key')
 })
 
-test('eddsa: verifyEDDSA does not mutate signature or pubkey arrays', async (t) => {
+test('eddsa: verifyEDDSA does not mutate signature or pubkey arrays', async () => {
   await initCircomlib('pure')
   await initializeEddsa()
 
@@ -48,17 +49,17 @@ test('eddsa: verifyEDDSA does not mutate signature or pubkey arrays', async (t) 
   const sBigInt = BigInt('0x' + bytesToHex(signature[2]!))
   eddsa.verifyEDDSA(message, { R8: [signature[0]!, signature[1]!], S: sBigInt }, pubKey)
 
-  t.alike(signature[0], sigSnapshot[0], 'R8x not mutated')
-  t.alike(signature[1], sigSnapshot[1], 'R8y not mutated')
-  t.alike(pubKey[0], pubSnapshot[0], 'pubKey x not mutated')
-  t.alike(pubKey[1], pubSnapshot[1], 'pubKey y not mutated')
+  assert.deepEqual(signature[0], sigSnapshot[0], 'R8x not mutated')
+  assert.deepEqual(signature[1], sigSnapshot[1], 'R8y not mutated')
+  assert.deepEqual(pubKey[0], pubSnapshot[0], 'pubKey x not mutated')
+  assert.deepEqual(pubKey[1], pubSnapshot[1], 'pubKey y not mutated')
 
   // Second verify call must still succeed — would fail if the first call corrupted inputs.
   const second = eddsa.verifyEDDSA(message, { R8: [signature[0]!, signature[1]!], S: sBigInt }, pubKey)
-  t.ok(second, 'second verify still succeeds')
+  assert.ok(second, 'second verify still succeeds')
 })
 
-test('eddsa: known public key from a fixed input', async (t) => {
+test('eddsa: known public key from a fixed input', async () => {
   await initCircomlib('pure')
   await initializeEddsa()
 
@@ -83,6 +84,6 @@ test('eddsa: known public key from a fixed input', async (t) => {
     ]),
   ]
   const result = eddsa.privateKeyToPublicKey(input)
-  t.alike(result[0], expected[0])
-  t.alike(result[1], expected[1])
+  assert.deepEqual(result[0], expected[0])
+  assert.deepEqual(result[1], expected[1])
 })

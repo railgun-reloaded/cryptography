@@ -4,8 +4,7 @@ Cryptographic primitives shared across the RAILGUN reloaded packages.
 
 This package wraps the underlying WASM/JS libraries (`circomlibjs`,
 `poseidon-lite`, `@noble/hashes`) and exposes a small, validated surface for
-use by `wallet-node`, `merkletree-manager`, and other consumers in the
-monorepo.
+use by `wallet-node`, `merkletree-manager`, and other consumers in the RAILGUN SDK.
 
 ## Installation
 

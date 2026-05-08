@@ -1,5 +1,7 @@
-import { test } from 'brittle'
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
 
+import type { CryptographyError } from '../src/index'
 import { initCircomlib, poseidon, poseidonBuild, poseidonFunc } from '../src/index'
 
 const VECTOR_INPUTS_2 = [
@@ -8,95 +10,110 @@ const VECTOR_INPUTS_2 = [
 ] as const
 const VECTOR_HASH_2 = '106dc6dc79863b23dc1a63c7ca40e8c22bb830e449b75a2286c7f7b0b87ae6c3'
 
-test('initCircomlib(wasm) populates poseidonBuild.wasm', async (t) => {
+test('initCircomlib(wasm) populates poseidonBuild.wasm', async () => {
   await initCircomlib('wasm')
-  t.ok(poseidonBuild.wasm, 'wasm build was set')
+  assert.ok(poseidonBuild.wasm, 'wasm build was set')
 })
 
-test('initCircomlib(pure) populates poseidonBuild.pure', async (t) => {
+test('initCircomlib(pure) populates poseidonBuild.pure', async () => {
   await initCircomlib('pure')
-  t.ok(poseidonBuild.pure, 'pure build was set')
+  assert.ok(poseidonBuild.pure, 'pure build was set')
 })
 
-test('poseidonFunc matches known test vector with bigint output', async (t) => {
+test('poseidonFunc matches known test vector with bigint output', async () => {
   await initCircomlib('wasm')
   const result = poseidonFunc([...VECTOR_INPUTS_2], true) as bigint
-  t.is(result.toString(16).padStart(64, '0'), VECTOR_HASH_2)
+  assert.equal(result.toString(16).padStart(64, '0'), VECTOR_HASH_2)
 })
 
-test('poseidonFunc accepts bigint, number, string, and Uint8Array inputs', async (t) => {
+test('poseidonFunc accepts bigint, number, string, and Uint8Array inputs', async () => {
   await initCircomlib('wasm')
-  t.ok(poseidonFunc([1n, 2n, 3n], true), 'bigint inputs')
-  t.ok(poseidonFunc([1, 2, 3], true), 'number inputs')
-  t.ok(poseidonFunc(['1', '2', '3'], true), 'string inputs')
-  t.ok(
+  assert.ok(poseidonFunc([1n, 2n, 3n], true), 'bigint inputs')
+  assert.ok(poseidonFunc([1, 2, 3], true), 'number inputs')
+  assert.ok(poseidonFunc(['1', '2', '3'], true), 'string inputs')
+  assert.ok(
     poseidonFunc([new Uint8Array([1]), new Uint8Array([2]), new Uint8Array([3])], true),
     'Uint8Array inputs'
   )
 })
 
-test('poseidonFunc returns Uint8Array by default and bigint when requested', async (t) => {
+test('poseidonFunc returns Uint8Array by default and bigint when requested', async () => {
   await initCircomlib('wasm')
-  t.ok((poseidonFunc([1n, 2n]) as Uint8Array) instanceof Uint8Array)
-  t.is(typeof poseidonFunc([1n, 2n], true), 'bigint')
+  assert.ok((poseidonFunc([1n, 2n]) as Uint8Array) instanceof Uint8Array)
+  assert.equal(typeof poseidonFunc([1n, 2n], true), 'bigint')
 })
 
-test('poseidonFunc throws for length outside 1..14', async (t) => {
+test('poseidonFunc throws InvalidInputCount for length outside 1..14', async () => {
   await initCircomlib('wasm')
-  t.exception(() => poseidonFunc([]), /between 1 and 14/)
-  t.exception(() => poseidonFunc(new Array(15).fill(1n)), /between 1 and 14/)
+  assert.throws(
+    () => poseidonFunc([]),
+    { name: 'CryptographyError', code: 'InvalidInputCount' satisfies CryptographyError['code'] }
+  )
+  assert.throws(
+    () => poseidonFunc(new Array(15).fill(1n)),
+    { name: 'CryptographyError', code: 'InvalidInputCount' satisfies CryptographyError['code'] }
+  )
 })
 
-test('poseidonFunc throws for null or undefined elements', async (t) => {
+test('poseidonFunc throws NullInput for null or undefined elements', async () => {
   await initCircomlib('wasm')
-  t.exception(() => poseidonFunc([1n, null as unknown as bigint]), /undefined or null/)
-  t.exception(() => poseidonFunc([1n, undefined as unknown as bigint]), /undefined or null/)
+  assert.throws(
+    () => poseidonFunc([1n, null as unknown as bigint]),
+    { name: 'CryptographyError', code: 'NullInput' satisfies CryptographyError['code'] }
+  )
+  assert.throws(
+    () => poseidonFunc([1n, undefined as unknown as bigint]),
+    { name: 'CryptographyError', code: 'NullInput' satisfies CryptographyError['code'] }
+  )
 })
 
-test('poseidonFunc throws for unsupported input types', async (t) => {
+test('poseidonFunc throws InvalidInputType for unsupported element types', async () => {
   await initCircomlib('wasm')
-  t.exception(() => poseidonFunc([{} as unknown as bigint]), /Invalid input type/)
+  assert.throws(
+    () => poseidonFunc([{} as unknown as bigint]),
+    { name: 'CryptographyError', code: 'InvalidInputType' satisfies CryptographyError['code'] }
+  )
 })
 
-test('poseidonFunc supports nOuts > 1 in both representations', async (t) => {
+test('poseidonFunc supports nOuts > 1 in both representations', async () => {
   await initCircomlib('wasm')
   const bigintOut = poseidonFunc([1n, 2n, 3n], true, 2)
-  t.ok(Array.isArray(bigintOut), 'bigint outputs are an array')
-  t.is((bigintOut as bigint[]).length, 2)
-  t.ok((bigintOut as bigint[]).every((v) => typeof v === 'bigint'))
+  assert.ok(Array.isArray(bigintOut), 'bigint outputs are an array')
+  assert.equal((bigintOut as bigint[]).length, 2)
+  assert.ok((bigintOut as bigint[]).every((v) => typeof v === 'bigint'))
 
   const bytesOut = poseidonFunc([1n, 2n, 3n], false, 2)
-  t.ok(Array.isArray(bytesOut), 'bytes outputs are an array')
-  t.is((bytesOut as Uint8Array[]).length, 2)
-  t.ok((bytesOut as Uint8Array[]).every((v) => v instanceof Uint8Array))
+  assert.ok(Array.isArray(bytesOut), 'bytes outputs are an array')
+  assert.equal((bytesOut as Uint8Array[]).length, 2)
+  assert.ok((bytesOut as Uint8Array[]).every((v) => v instanceof Uint8Array))
 })
 
-test('poseidonFunc does not mutate the input array', async (t) => {
+test('poseidonFunc does not mutate the input array', async () => {
   await initCircomlib('wasm')
   const inputs: (bigint | Uint8Array)[] = [new Uint8Array([1]), 2n, new Uint8Array([3])]
   const snapshot = inputs.map((v) => (v instanceof Uint8Array ? new Uint8Array(v) : v))
   poseidonFunc(inputs)
-  t.alike(inputs[0], snapshot[0] as Uint8Array)
-  t.is(inputs[1], snapshot[1])
-  t.alike(inputs[2], snapshot[2] as Uint8Array)
+  assert.deepEqual(inputs[0], snapshot[0] as Uint8Array)
+  assert.equal(inputs[1], snapshot[1])
+  assert.deepEqual(inputs[2], snapshot[2] as Uint8Array)
 })
 
-test('poseidon (circomlibjs) returns 32-byte hash for valid Uint8Array inputs', async (t) => {
+test('poseidon (circomlibjs) returns 32-byte hash for valid Uint8Array inputs', async () => {
   await initCircomlib('wasm')
   const result = poseidon([new Uint8Array([1]), new Uint8Array([2])])
-  t.ok(result instanceof Uint8Array)
-  t.is(result.length, 32)
+  assert.ok(result instanceof Uint8Array)
+  assert.equal(result.length, 32)
 })
 
-test('poseidon throws when neither pure nor wasm is loaded', (t) => {
+test('poseidon throws PoseidonNotLoaded when neither pure nor wasm is loaded', () => {
   const previousWasm = poseidonBuild.wasm
   const previousPure = poseidonBuild.pure
   poseidonBuild.wasm = null
   poseidonBuild.pure = null
   try {
-    t.exception(
+    assert.throws(
       () => poseidon([new Uint8Array([1]), new Uint8Array([2])]),
-      /Poseidon has not been loaded/
+      { name: 'CryptographyError', code: 'PoseidonNotLoaded' satisfies CryptographyError['code'] }
     )
   } finally {
     poseidonBuild.wasm = previousWasm
@@ -104,14 +121,14 @@ test('poseidon throws when neither pure nor wasm is loaded', (t) => {
   }
 })
 
-test('poseidon falls back to pure when wasm is unavailable', async (t) => {
+test('poseidon falls back to pure when wasm is unavailable', async () => {
   await initCircomlib('pure')
   const previousWasm = poseidonBuild.wasm
   poseidonBuild.wasm = null
   try {
     const out = poseidon([new Uint8Array([1]), new Uint8Array([2])])
-    t.ok(out instanceof Uint8Array)
-    t.is(out.length, 32)
+    assert.ok(out instanceof Uint8Array)
+    assert.equal(out.length, 32)
   } finally {
     poseidonBuild.wasm = previousWasm
   }

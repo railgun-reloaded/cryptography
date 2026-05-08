@@ -9,7 +9,7 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "pretest": "npm run build",
-    "test": "npm run build && NODE_OPTIONS=--enable-source-maps brittle ./test/**/*.test.js",
+    "test": "npm run build && node --test --enable-source-maps ./test/*.test.js",
     "prepack": "npm run build"
   },
   "repository": {
@@ -34,9 +34,7 @@
   "devDependencies": {
     "@railgun-reloaded/eslint-config": "^1.1.0",
     "@railgun-reloaded/tsconfig": "^1.2.0",
-    "@types/brittle": "^3.5.0",
     "@types/node": "^24.0.10",
-    "brittle": "^3.19.1",
     "eslint": "^9.24.0",
     "typescript": "^5.8.3"
   },

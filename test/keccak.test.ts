@@ -1,6 +1,8 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
 import { hexToBytes } from '@noble/hashes/utils'
 import { bytesToBigInt } from '@railgun-reloaded/bytes'
-import { test } from 'brittle'
 
 import { keccak256 } from '../src/index'
 
@@ -24,20 +26,20 @@ const VECTORS = [
   },
 ] as const
 
-test('keccak256 matches known test vectors via hex preimage', (t) => {
+test('keccak256 matches known test vectors via hex preimage', () => {
   for (const vector of VECTORS) {
     const hash = keccak256(hexToBytes(vector.preImage))
-    t.is(bytesToBigInt(hash).toString(16), vector.expected)
+    assert.equal(bytesToBigInt(hash).toString(16), vector.expected)
   }
 })
 
-test('keccak256 matches known test vectors via Uint8Array preimage', (t) => {
+test('keccak256 matches known test vectors via Uint8Array preimage', () => {
   for (const vector of VECTORS) {
     const hash = keccak256(vector.array)
-    t.is(bytesToBigInt(hash).toString(16), vector.expected)
+    assert.equal(bytesToBigInt(hash).toString(16), vector.expected)
   }
 })
 
-test('keccak256 returns a 32-byte digest', (t) => {
-  t.is(keccak256(new Uint8Array([1, 2, 3])).length, 32)
+test('keccak256 returns a 32-byte digest', () => {
+  assert.equal(keccak256(new Uint8Array([1, 2, 3])).length, 32)
 })

@@ -1,11 +1,13 @@
 // @ts-ignore -- circomlibjs ships no upstream type definitions
 import { buildEddsa } from 'circomlibjs'
 
+import { CryptographyError } from '../errors'
+
 /**
  * Minimal type for the circomlibjs EDDSA build object covering the surface
  * that this package consumes.
  */
-interface EddsaBuild {
+type EddsaBuild = {
   F: {
     toMontgomery: (value: Uint8Array) => Uint8Array
     fromMontgomery: (value: Uint8Array) => Uint8Array
@@ -38,13 +40,16 @@ const initializeEddsa = async (): Promise<void> => {
 }
 
 /**
- * Throw a descriptive error if `initializeEddsa` has not been awaited.
+ * Throw `CryptographyError(EddsaNotInitialized)` if `initializeEddsa` has not
+ * been awaited; otherwise return the initialized EDDSA build.
  * @returns The initialized EDDSA build.
- * @throws If EDDSA has not been initialized.
  */
 const assertEddsaReady = (): EddsaBuild => {
   if (eddsaBuild === undefined) {
-    throw new Error('EDDSA not initialized. Await initializeEddsa() first.')
+    throw new CryptographyError(
+      'EddsaNotInitialized',
+      'EDDSA not initialized. Await initializeEddsa() first.'
+    )
   }
   return eddsaBuild
 }

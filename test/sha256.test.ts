@@ -1,6 +1,8 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
 import { hexToBytes } from '@noble/hashes/utils'
 import { bytesToBigInt } from '@railgun-reloaded/bytes'
-import { test } from 'brittle'
 
 import { sha256 } from '../src/index'
 
@@ -15,13 +17,13 @@ const VECTORS = [
   },
 ] as const
 
-test('sha256 matches NIST FIPS-180-4 test vectors', (t) => {
+test('sha256 matches NIST FIPS-180-4 test vectors', () => {
   for (const vector of VECTORS) {
     const digest = sha256(hexToBytes(vector.preImage))
-    t.is(bytesToBigInt(digest).toString(16).padStart(64, '0'), vector.expected)
+    assert.equal(bytesToBigInt(digest).toString(16).padStart(64, '0'), vector.expected)
   }
 })
 
-test('sha256 returns a 32-byte digest', (t) => {
-  t.is(sha256(new Uint8Array([1, 2, 3])).length, 32)
+test('sha256 returns a 32-byte digest', () => {
+  assert.equal(sha256(new Uint8Array([1, 2, 3])).length, 32)
 })

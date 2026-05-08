@@ -2,7 +2,7 @@ import { bigIntToBytes } from '@railgun-reloaded/bytes'
 
 import { assertEddsaReady } from './eddsa'
 
-interface CircomlibSignature {
+type CircomlibSignature = {
   R8: [Uint8Array, Uint8Array];
   S: bigint;
 }
@@ -12,14 +12,15 @@ const eddsa = {
    * Convert a babyJubJub private key to its public key.
    * @param privateKey - 32-byte private key.
    * @returns The public key as a tuple of two 32-byte coordinates.
-   * @throws If `initializeEddsa` has not been awaited.
+   * @throws CryptographyError(EddsaNotInitialized) if `initializeEddsa` has
+   *         not been awaited.
    */
   privateKeyToPublicKey (privateKey: Uint8Array): [Uint8Array, Uint8Array] {
     const build = assertEddsaReady()
     const [x, y] = build.prv2pub(privateKey)
     return [
-      build.F.fromMontgomery(x).reverse() as Uint8Array,
-      build.F.fromMontgomery(y).reverse() as Uint8Array,
+      build.F.fromMontgomery(x).reverse(),
+      build.F.fromMontgomery(y).reverse(),
     ]
   },
 
@@ -29,7 +30,8 @@ const eddsa = {
    * @param key - 32-byte private key.
    * @param message - Message bytes to sign.
    * @returns Signature as a 3-tuple `[R8x, R8y, S]`, each 32 bytes.
-   * @throws If `initializeEddsa` has not been awaited.
+   * @throws CryptographyError(EddsaNotInitialized) if `initializeEddsa` has
+   *         not been awaited.
    */
   signPoseidon (
     key: Uint8Array,
@@ -39,9 +41,10 @@ const eddsa = {
     const montgomery = build.F.toMontgomery(new Uint8Array(message).reverse())
     const sig = build.signPoseidon(key, montgomery)
     const r8: [Uint8Array, Uint8Array] = [
-      build.F.fromMontgomery(sig.R8[0]).reverse() as Uint8Array,
-      build.F.fromMontgomery(sig.R8[1]).reverse() as Uint8Array,
+      build.F.fromMontgomery(sig.R8[0]).reverse(),
+      build.F.fromMontgomery(sig.R8[1]).reverse(),
     ]
+
     return [r8[0], r8[1], bigIntToBytes(sig.S, 32)]
   },
 
@@ -51,7 +54,8 @@ const eddsa = {
    * @param signature - Signature decoded into `{ R8, S }` shape.
    * @param pubkey - Public key tuple matching the signing key.
    * @returns True when the signature verifies.
-   * @throws If `initializeEddsa` has not been awaited.
+   * @throws CryptographyError(EddsaNotInitialized) if `initializeEddsa` has
+   *         not been awaited.
    */
   verifyEDDSA (
     message: Uint8Array,
@@ -68,6 +72,7 @@ const eddsa = {
       build.F.toMontgomery(new Uint8Array(pubkey[0]).reverse()),
       build.F.toMontgomery(new Uint8Array(pubkey[1]).reverse()),
     ]
+
     return build.verifyPoseidon(montgomery, { R8: r8, S: signature.S }, newPubKey)
   },
 }

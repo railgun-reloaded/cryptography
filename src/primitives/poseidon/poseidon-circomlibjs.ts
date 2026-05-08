@@ -1,6 +1,8 @@
 import { padBytesLeft } from '@railgun-reloaded/bytes'
-// @ts-ignore -- ignore typecheck.
+// @ts-ignore -- circomlibjs ships no upstream type definitions
 import { buildPoseidon, buildPoseidonOpt } from 'circomlibjs'
+
+import { CryptographyError } from '../errors'
 
 const constructors = {
   pure: buildPoseidonOpt, // optimized js implementation
@@ -43,7 +45,7 @@ const poseidon = (inputs: Uint8Array[]): Uint8Array => {
   // Prefer wasm if it has been initialized; otherwise fall back to pure.
   const p = poseidonBuild.wasm ?? poseidonBuild.pure
   if (p === null) {
-    throw new Error('Poseidon has not been loaded.')
+    throw new CryptographyError('PoseidonNotLoaded', 'Poseidon has not been loaded.')
   }
   // Pad each input to the 32-byte field size before passing to circomlibjs.
   // Strict mode rejects >32-byte inputs since they can't represent a field element.
