@@ -54,6 +54,7 @@ const poseidon = (inputs: Uint8Array[]): Uint8Array => {
   const result = p.F.fromMontgomery(
     p(padded.map((input) => p.F.toMontgomery(new Uint8Array(input).reverse())))
   )
+
   return result.reverse()
 }
 
@@ -61,10 +62,6 @@ const poseidon = (inputs: Uint8Array[]): Uint8Array => {
  * Compute a Poseidon hash over hex-string inputs. Each input is parsed as a
  * BabyJubJub field element (with or without `0x` prefix, padded internally to
  * 32 bytes). Output is a lowercase 64-character hex string.
- *
- * Mirrors the engine's `poseidonHex` API so consumers porting from engine
- * code paths (e.g. merkle tree node hashing, key-derivation random scalars)
- * can use the same shape.
  * @param inputs - Hex-encoded field elements.
  * @returns Poseidon hash as a 64-character lowercase hex string.
  * @throws CryptographyError(PoseidonNotLoaded) if poseidon has not been loaded.
@@ -75,6 +72,7 @@ const poseidonHex = (inputs: string[]): string => {
     const value = stripped.length === 0 ? 0n : BigInt('0x' + stripped)
     return bigIntToBytes(value, 32)
   })
+
   return bytesToHex(poseidon(padded))
 }
 

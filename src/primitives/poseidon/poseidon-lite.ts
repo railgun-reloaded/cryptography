@@ -56,6 +56,7 @@ const poseidonFunc = (
         `Expected output to be a bigint, got ${typeof output}`
       )
     }
+
     return returnBigInt ? output : bigIntToBytes(output, 32)
   }
 

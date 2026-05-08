@@ -18,6 +18,7 @@ const eddsa = {
   privateKeyToPublicKey (privateKey: Uint8Array): [Uint8Array, Uint8Array] {
     const build = assertEddsaReady()
     const [x, y] = build.prv2pub(privateKey)
+
     return [
       build.F.fromMontgomery(x).reverse(),
       build.F.fromMontgomery(y).reverse(),
@@ -45,7 +46,11 @@ const eddsa = {
       build.F.fromMontgomery(sig.R8[1]).reverse(),
     ]
 
-    return [r8[0], r8[1], bigIntToBytes(sig.S, 32)]
+    return [
+      r8[0],
+      r8[1],
+      bigIntToBytes(sig.S, 32)
+    ]
   },
 
   /**
