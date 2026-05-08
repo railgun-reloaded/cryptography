@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import type { CryptographyError } from '../src/index'
-import { initCircomlib, poseidon, poseidonBuild, poseidonFunc } from '../src/index'
+import { initCircomlib, initPoseidon, poseidon, poseidonBuild, poseidonFunc, poseidonHex } from '../src/index'
 
 const VECTOR_INPUTS_2 = [
   '0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a',
@@ -132,4 +132,32 @@ test('poseidon falls back to pure when wasm is unavailable', async () => {
   } finally {
     poseidonBuild.wasm = previousWasm
   }
+})
+
+const POSEIDON_HEX_0_1 = '1bd20834f5de9830c643778a2e88a3a1363c8b9ac083d36d75bf87c49953e65e'
+
+test('poseidonHex matches engine vectors regardless of input format', async () => {
+  await initCircomlib('wasm')
+  assert.equal(poseidonHex(['0', '1']), POSEIDON_HEX_0_1, 'unprefixed single-digit hex')
+  assert.equal(poseidonHex(['00', '01']), POSEIDON_HEX_0_1, 'unprefixed even-length hex')
+  assert.equal(poseidonHex(['0x0', '0x1']), POSEIDON_HEX_0_1, '0x-prefixed odd-length hex')
+  assert.equal(poseidonHex(['0x00', '0x01']), POSEIDON_HEX_0_1, '0x-prefixed even-length hex')
+})
+
+test('poseidonHex returns a 64-character lowercase hex string', async () => {
+  await initCircomlib('wasm')
+  const result = poseidonHex(['0x1', '0x2'])
+  assert.equal(result.length, 64)
+  assert.equal(result, result.toLowerCase())
+})
+
+test('initPoseidon leaves at least one poseidon build loaded', async () => {
+  // Reset state so the test exercises the full init path.
+  poseidonBuild.wasm = null
+  poseidonBuild.pure = null
+  await initPoseidon()
+  assert.ok(
+    poseidonBuild.wasm !== null || poseidonBuild.pure !== null,
+    'at least one of pure/wasm is loaded after initPoseidon'
+  )
 })

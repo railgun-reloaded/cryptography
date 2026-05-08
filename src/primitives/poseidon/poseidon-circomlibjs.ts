@@ -1,4 +1,4 @@
-import { padBytesLeft } from '@railgun-reloaded/bytes'
+import { bigIntToBytes, bytesToHex, padBytesLeft } from '@railgun-reloaded/bytes'
 // @ts-ignore -- circomlibjs ships no upstream type definitions
 import { buildPoseidon, buildPoseidonOpt } from 'circomlibjs'
 
@@ -57,4 +57,25 @@ const poseidon = (inputs: Uint8Array[]): Uint8Array => {
   return result.reverse()
 }
 
-export { poseidonBuild, initCircomlib, poseidon }
+/**
+ * Compute a Poseidon hash over hex-string inputs. Each input is parsed as a
+ * BabyJubJub field element (with or without `0x` prefix, padded internally to
+ * 32 bytes). Output is a lowercase 64-character hex string.
+ *
+ * Mirrors the engine's `poseidonHex` API so consumers porting from engine
+ * code paths (e.g. merkle tree node hashing, key-derivation random scalars)
+ * can use the same shape.
+ * @param inputs - Hex-encoded field elements.
+ * @returns Poseidon hash as a 64-character lowercase hex string.
+ * @throws CryptographyError(PoseidonNotLoaded) if poseidon has not been loaded.
+ */
+const poseidonHex = (inputs: string[]): string => {
+  const padded = inputs.map((input) => {
+    const stripped = input.startsWith('0x') ? input.slice(2) : input
+    const value = stripped.length === 0 ? 0n : BigInt('0x' + stripped)
+    return bigIntToBytes(value, 32)
+  })
+  return bytesToHex(poseidon(padded))
+}
+
+export { poseidonBuild, initCircomlib, poseidon, poseidonHex }
