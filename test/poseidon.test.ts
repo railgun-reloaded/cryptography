@@ -151,6 +151,39 @@ test('poseidonHex returns a 64-character lowercase hex string', async () => {
   assert.equal(result, result.toLowerCase())
 })
 
+// Canonical Poseidon (BabyJubJub) reference vectors from iden3/circomlibjs's
+// own test suite. Both implementation paths used here (poseidon-lite via
+// `poseidonFunc`, and circomlibjs via `poseidonHex`) must agree on these.
+// Source: https://github.com/iden3/circomlibjs/blob/main/test/poseidon.js
+const POSEIDON_REFERENCE_VECTORS = [
+  {
+    inputs: [1n, 2n],
+    expected: 0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189an,
+  },
+  {
+    inputs: [1n, 2n, 3n, 4n],
+    expected: 0x299c867db6c1fdd79dcefa40e4510b9837e60ebb1ce0663dbaa525df65250465n,
+  },
+  {
+    inputs: [1n, 2n, 3n, 4n, 5n, 6n],
+    expected: 20400040500897583745843009878988256314335038853985262692600694741116813247201n,
+  },
+] as const
+
+for (const v of POSEIDON_REFERENCE_VECTORS) {
+  test(`poseidonFunc matches circomlibjs reference (${v.inputs.length} inputs)`, async () => {
+    await initCircomlib('wasm')
+    const got = poseidonFunc([...v.inputs], true) as bigint
+    assert.equal(got, v.expected)
+  })
+
+  test(`poseidonHex matches circomlibjs reference (${v.inputs.length} inputs)`, async () => {
+    await initCircomlib('wasm')
+    const got = poseidonHex(v.inputs.map((x) => '0x' + x.toString(16)))
+    assert.equal(got, v.expected.toString(16).padStart(64, '0'))
+  })
+}
+
 test('initPoseidon leaves at least one poseidon build loaded', async () => {
   // Reset state so the test exercises the full init path.
   poseidonBuild.wasm = null

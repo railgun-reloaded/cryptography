@@ -108,3 +108,90 @@ test('AES.getRandomIV returns a fresh 16-byte iv each call', () => {
   assert.equal(b.length, 16)
   assert.ok(!a.every((v, i) => v === b[i]), 'two random IVs are not identical')
 })
+
+const fromHex = (h: string): Uint8Array => Uint8Array.from(Buffer.from(h, 'hex'))
+
+// AES-256-GCM known-answer vectors from Project Wycheproof
+// (testvectors_v1/aes_gcm_test.json: keySize=256, ivSize=128, tagSize=128, aad="").
+// `encryptGCM` generates its own IV, so these drive `decryptGCM` only.
+// Source: https://github.com/C2SP/wycheproof
+const wycheproofGcmVectors = [
+  {
+    tcId: 240,
+    key: '00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f',
+    iv: '5c2ea9b695fcf6e264b96074d6bfa572',
+    ct: '28e1c5232f4ee8161dbe4c036309e0b3254e9212bef0a93431ce5e5604c8f6a73c18a3183018b770',
+    tag: 'd5808a1bd11a01129bf3c6919aff2339',
+    pt: '00000000000000000000000000000000000000000000000000000000000000000000000000000000',
+  },
+  {
+    tcId: 254,
+    key: 'b4cd11db0b3e0b9b34eafd9fe027746976379155e76116afde1b96d21298e34f',
+    iv: '00c49f4ebb07393f07ebc3825f7b0830',
+    ct: '',
+    tag: '306fe8c9645cc849823e333a685b90b2',
+    pt: '',
+  },
+  {
+    tcId: 255,
+    key: 'b7797eb0c1a6089ad5452d81fdb14828c040ddc4589c32b565aad8cb4de3e4a0',
+    iv: '0ad570d8863918fe89124e09d125a271',
+    ct: '3f',
+    tag: 'fd8f593b83314e33c5a72efbeb7095e8',
+    pt: 'ed',
+  },
+  {
+    tcId: 257,
+    key: 'e7f7a48df99edd92b81f508618aa96526b279debd9ddb292d385ddbae80b2259',
+    iv: '7ee376910f08f497aa6c3aa7113697fd',
+    ct: '469478d448f7e97d755541aa09ad95b0',
+    tag: '254ada5cf662d90c5e11b2bd9c4db4c4',
+    pt: '5e51dbbb861b5ec60751c0996e00527f',
+  },
+  {
+    tcId: 258,
+    key: '4f84782bfbb64a973c3de3dcfa3430367fd68bc0b4c3b31e5d7c8141ba3e6a67',
+    iv: '5d1bde6fa0994b33efd8f23f531248a7',
+    ct: 'cb960201fa5ad41d41d1c2c8037c71d52b72e76b16b589d71b976627c9734c9d',
+    tag: '8dfce16467c3a6ebb3e7242c9a551962',
+    pt: '78cb6650a1908a842101ea85804fed00cc56fbdafafba0ef4d1ca607dcae57b6',
+  },
+]
+
+for (const v of wycheproofGcmVectors) {
+  test(`AES-256-GCM decrypts Wycheproof vector tcId=${v.tcId}`, () => {
+    const recovered = AES.decryptGCM(
+      {
+        iv: fromHex(v.iv),
+        tag: fromHex(v.tag),
+        data: v.ct === '' ? [] : [fromHex(v.ct)],
+      },
+      fromHex(v.key)
+    )
+    const expected = v.pt === '' ? [] : [fromHex(v.pt)]
+    assert.deepEqual(recovered, expected)
+  })
+}
+
+// AES-256-CTR known-answer vectors from NIST SP 800-38A Appendix F.5.6
+// (CTR-AES256.Decrypt). Same key / initial counter / blocks as F.5.5.
+// `encryptCTR` generates its own IV, so these drive `decryptCTR` only.
+// Source: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf
+test('AES-256-CTR decrypts NIST SP 800-38A F.5.6 vectors', () => {
+  const key = fromHex('603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4')
+  const iv = fromHex('f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff')
+  const ciphertext = [
+    fromHex('601ec313775789a5b7a7f504bbf3d228'),
+    fromHex('f443e3ca4d62b59aca84e990cacaf5c5'),
+    fromHex('2b0930daa23de94ce87017ba2d84988d'),
+    fromHex('dfc9c58db67aada613c2dd08457941a6'),
+  ]
+  const expected = [
+    fromHex('6bc1bee22e409f96e93d7e117393172a'),
+    fromHex('ae2d8a571e03ac9c9eb76fac45af8e51'),
+    fromHex('30c81c46a35ce411e5fbc1191a0a52ef'),
+    fromHex('f69f2445df4f9b17ad2b417be66c3710'),
+  ]
+  const recovered = AES.decryptCTR({ iv, data: ciphertext }, key)
+  assert.deepEqual(recovered, expected)
+})
