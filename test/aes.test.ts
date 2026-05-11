@@ -109,6 +109,11 @@ test('AES.getRandomIV returns a fresh 16-byte iv each call', () => {
   assert.ok(!a.every((v, i) => v === b[i]), 'two random IVs are not identical')
 })
 
+/**
+ * Decodes a hex-encoded string into its raw byte representation.
+ * @param h - hex-encoded string (no `0x` prefix)
+ * @returns the decoded bytes as a `Uint8Array`
+ */
 const fromHex = (h: string): Uint8Array => Uint8Array.from(Buffer.from(h, 'hex'))
 
 // AES-256-GCM known-answer vectors from Project Wycheproof
