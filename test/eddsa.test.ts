@@ -6,7 +6,18 @@ import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
 
 import { BABYJUBJUB_SUBGROUP_ORDER, eddsa, initCircomlib, initializeEddsa } from '../src/index'
 
+/**
+ * Decodes a big-endian byte array as an unsigned bigint.
+ * @param b - big-endian encoded bytes
+ * @returns the decoded value as a `bigint`
+ */
 const bytesToBig = (b: Uint8Array): bigint => BigInt('0x' + bytesToHex(b))
+
+/**
+ * Encodes an unsigned bigint as a 32-byte big-endian `Uint8Array`.
+ * @param v - non-negative `bigint` that fits in 32 bytes
+ * @returns the 32-byte big-endian encoding
+ */
 const bigToBytesBE = (v: bigint): Uint8Array => hexToBytes(v.toString(16).padStart(64, '0'))
 
 // Non-identity points in the 8-torsion subgroup of BabyJubJub (cofactor 8).
@@ -199,6 +210,12 @@ test('eddsa: rejects malleated signature with S out of range', async () => {
   const S = bytesToBig(sig[2])
 
   assert.ok(S < BABYJUBJUB_SUBGROUP_ORDER, 'precondition: real S is in [0, L)')
+  /**
+   * Verifies the honest `(R8, pubKey, message)` triple after swapping in a
+   * mutated `S`. Used to assert that out-of-range `S` values are rejected.
+   * @param mutatedS - candidate `S` scalar to substitute into the signature
+   * @returns `true` only if the verifier accepts the malleated signature
+   */
   const verifyWithS = (mutatedS: bigint) =>
     eddsa.verifyEDDSA(message, { R8: [sig[0], sig[1]], S: mutatedS }, pubKey)
 
@@ -250,6 +267,12 @@ test('eddsa: rejects forgery with R8 = identity point', async () => {
   identityY[31] = 1
   const identityR8: [Uint8Array, Uint8Array] = [identityX, identityY]
 
+  /**
+   * Verifies a candidate signature whose `R8` is the BabyJubJub identity,
+   * parameterised by the scalar `S`.
+   * @param S - candidate `S` scalar to pair with `R8 = O`
+   * @returns `true` only if the verifier accepts the crafted signature
+   */
   const verifyWithIdentityR8 = (S: bigint) =>
     eddsa.verifyEDDSA(message, { R8: identityR8, S }, pubKey)
 
@@ -302,6 +325,94 @@ test('eddsa: rejects forgery with pubkey in BabyJubJub small subgroup', async ()
         `small-subgroup pubkey with R8=same, S=${S} must not verify`
       )
     }
+  }
+})
+
+// Identity-pubkey attack. With A = O the cofactored term 8·h·A vanishes, so
+// the verification equation collapses to S·Base8 = R8 — independent of the
+// message or the hash. Any attacker who can supply pubkey = O can forge by
+// choosing S and computing R8 = S·Base8 (trivially S = 0, R8 = O). A correct
+// verifier must reject identity pubkeys; circomlibjs's inCurve check passes
+// (0, 1), so this relies on additional defenses.
+test('eddsa: rejects forgery with pubkey = identity point', async () => {
+  await initCircomlib('pure')
+  await initializeEddsa()
+
+  const message = new Uint8Array(randomBytes(32))
+  const identityX = new Uint8Array(32)
+  const identityY = new Uint8Array(32)
+  identityY[31] = 1
+  const identityPub: [Uint8Array, Uint8Array] = [identityX, identityY]
+
+  // Crafted attack: S = 0, R8 = O satisfies S·Base8 = R8 = O.
+  assert.ok(
+    !eddsa.verifyEDDSA(message, { R8: identityPub, S: 0n }, identityPub),
+    'pubkey = O with R8 = O, S = 0 must not verify'
+  )
+
+  // Honest signature material with pubkey swapped to identity — hm depends
+  // on pubkey so the relation breaks; this should clearly reject.
+  const realPrivate = new Uint8Array(randomBytes(32))
+  const realSig = eddsa.signPoseidon(realPrivate, message)
+  assert.ok(
+    !eddsa.verifyEDDSA(
+      message,
+      { R8: [realSig[0], realSig[1]], S: bytesToBig(realSig[2]) },
+      identityPub
+    ),
+    'pubkey = O with honest sig material must not verify'
+  )
+
+  // Naive S values with R8 = O. Only S = 0 satisfies the equation; the
+  // others are guarded against accidental acceptance.
+  for (const S of [1n, 2n, 12345n, BABYJUBJUB_SUBGROUP_ORDER - 1n]) {
+    assert.ok(
+      !eddsa.verifyEDDSA(message, { R8: identityPub, S }, identityPub),
+      `pubkey = O with R8 = O, S = ${S} must not verify`
+    )
+  }
+})
+
+// Off-curve point attacks. The all-zero encoding (0, 0) is not a BabyJubJub
+// point — circomlibjs's inCurve check should reject it for both R8 and A.
+// We pin that behavior so a future refactor that bypasses inCurve cannot
+// silently regress.
+test('eddsa: rejects verification with R8 = (0, 0) off-curve bytes', async () => {
+  await initCircomlib('pure')
+  await initializeEddsa()
+
+  const privateKey = new Uint8Array(randomBytes(32))
+  const message = new Uint8Array(randomBytes(32))
+  const pubKey = eddsa.privateKeyToPublicKey(privateKey)
+  const realSig = eddsa.signPoseidon(privateKey, message)
+
+  const zeroR8: [Uint8Array, Uint8Array] = [new Uint8Array(32), new Uint8Array(32)]
+  for (const S of [0n, 1n, bytesToBig(realSig[2]), BABYJUBJUB_SUBGROUP_ORDER - 1n]) {
+    assert.ok(
+      !eddsa.verifyEDDSA(message, { R8: zeroR8, S }, pubKey),
+      `R8 = (0, 0) off-curve with S = ${S} must not verify`
+    )
+  }
+})
+
+test('eddsa: rejects verification with pubkey = (0, 0) off-curve bytes', async () => {
+  await initCircomlib('pure')
+  await initializeEddsa()
+
+  const privateKey = new Uint8Array(randomBytes(32))
+  const message = new Uint8Array(randomBytes(32))
+  const realSig = eddsa.signPoseidon(privateKey, message)
+
+  const zeroPub: [Uint8Array, Uint8Array] = [new Uint8Array(32), new Uint8Array(32)]
+  for (const S of [0n, 1n, bytesToBig(realSig[2]), BABYJUBJUB_SUBGROUP_ORDER - 1n]) {
+    assert.ok(
+      !eddsa.verifyEDDSA(
+        message,
+        { R8: [realSig[0], realSig[1]], S },
+        zeroPub
+      ),
+      `pubkey = (0, 0) off-curve with S = ${S} must not verify`
+    )
   }
 })
 
