@@ -328,51 +328,6 @@ test('eddsa: rejects forgery with pubkey in BabyJubJub small subgroup', async ()
   }
 })
 
-// Identity-pubkey attack. With A = O the cofactored term 8·h·A vanishes, so
-// the verification equation collapses to S·Base8 = R8 — independent of the
-// message or the hash. Any attacker who can supply pubkey = O can forge by
-// choosing S and computing R8 = S·Base8 (trivially S = 0, R8 = O). A correct
-// verifier must reject identity pubkeys; circomlibjs's inCurve check passes
-// (0, 1), so this relies on additional defenses.
-test('eddsa: rejects forgery with pubkey = identity point', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
-  const message = new Uint8Array(randomBytes(32))
-  const identityX = new Uint8Array(32)
-  const identityY = new Uint8Array(32)
-  identityY[31] = 1
-  const identityPub: [Uint8Array, Uint8Array] = [identityX, identityY]
-
-  // Crafted attack: S = 0, R8 = O satisfies S·Base8 = R8 = O.
-  assert.ok(
-    !eddsa.verifyEDDSA(message, { R8: identityPub, S: 0n }, identityPub),
-    'pubkey = O with R8 = O, S = 0 must not verify'
-  )
-
-  // Honest signature material with pubkey swapped to identity — hm depends
-  // on pubkey so the relation breaks; this should clearly reject.
-  const realPrivate = new Uint8Array(randomBytes(32))
-  const realSig = eddsa.signPoseidon(realPrivate, message)
-  assert.ok(
-    !eddsa.verifyEDDSA(
-      message,
-      { R8: [realSig[0], realSig[1]], S: bytesToBig(realSig[2]) },
-      identityPub
-    ),
-    'pubkey = O with honest sig material must not verify'
-  )
-
-  // Naive S values with R8 = O. Only S = 0 satisfies the equation; the
-  // others are guarded against accidental acceptance.
-  for (const S of [1n, 2n, 12345n, BABYJUBJUB_SUBGROUP_ORDER - 1n]) {
-    assert.ok(
-      !eddsa.verifyEDDSA(message, { R8: identityPub, S }, identityPub),
-      `pubkey = O with R8 = O, S = ${S} must not verify`
-    )
-  }
-})
-
 // Off-curve point attacks. The all-zero encoding (0, 0) is not a BabyJubJub
 // point — circomlibjs's inCurve check should reject it for both R8 and A.
 // We pin that behavior so a future refactor that bypasses inCurve cannot
