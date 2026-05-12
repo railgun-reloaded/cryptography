@@ -2,23 +2,9 @@ import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
 import { test } from 'node:test'
 
-import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
+import { bigIntToBytes, bytesToBigInt, hexToBytes } from '@railgun-reloaded/bytes'
 
 import { BABYJUBJUB_SUBGROUP_ORDER, eddsa, initCircomlib, initializeEddsa } from '../src/index'
-
-/**
- * Decodes a big-endian byte array as an unsigned bigint.
- * @param b - big-endian encoded bytes
- * @returns the decoded value as a `bigint`
- */
-const bytesToBig = (b: Uint8Array): bigint => BigInt('0x' + bytesToHex(b))
-
-/**
- * Encodes an unsigned bigint as a 32-byte big-endian `Uint8Array`.
- * @param v - non-negative `bigint` that fits in 32 bytes
- * @returns the 32-byte big-endian encoding
- */
-const bigToBytesBE = (v: bigint): Uint8Array => hexToBytes(v.toString(16).padStart(64, '0'))
 
 // Non-identity points in the 8-torsion subgroup of BabyJubJub (cofactor 8).
 // Order 1 (identity) is exercised separately by the R8 = (0, 1) test above.
@@ -57,7 +43,7 @@ test('eddsa: signPoseidon roundtrip verifies under verifyEDDSA', async () => {
     message,
     {
       R8: [signature[0]!, signature[1]!],
-      S: BigInt('0x' + bytesToHex(signature[2]!)),
+      S: bytesToBigInt(signature[2]!),
     },
     pubKey
   )
@@ -82,7 +68,7 @@ test('eddsa: verifyEDDSA does not mutate signature or pubkey arrays', async () =
     new Uint8Array(pubKey[1]),
   ]
 
-  const sBigInt = BigInt('0x' + bytesToHex(signature[2]!))
+  const sBigInt = bytesToBigInt(signature[2]!)
   eddsa.verifyEDDSA(message, { R8: [signature[0]!, signature[1]!], S: sBigInt }, pubKey)
 
   assert.deepEqual(signature[0], sigSnapshot[0], 'R8x not mutated')
@@ -147,17 +133,17 @@ test('eddsa: signs canonical circomlibjs reference vector', async () => {
   const expectedS = 1672775540645840396591609181675628451599263765380031905495115170613215233181n
 
   const pubKey = eddsa.privateKeyToPublicKey(privateKey)
-  assert.equal(bytesToBig(pubKey[0]), expectedPubX, 'pubkey x matches')
-  assert.equal(bytesToBig(pubKey[1]), expectedPubY, 'pubkey y matches')
+  assert.equal(bytesToBigInt(pubKey[0]), expectedPubX, 'pubkey x matches')
+  assert.equal(bytesToBigInt(pubKey[1]), expectedPubY, 'pubkey y matches')
 
   const signature = eddsa.signPoseidon(privateKey, message)
-  assert.equal(bytesToBig(signature[0]), expectedR8x, 'signature R8x matches')
-  assert.equal(bytesToBig(signature[1]), expectedR8y, 'signature R8y matches')
-  assert.equal(bytesToBig(signature[2]), expectedS, 'signature S matches')
+  assert.equal(bytesToBigInt(signature[0]), expectedR8x, 'signature R8x matches')
+  assert.equal(bytesToBigInt(signature[1]), expectedR8y, 'signature R8y matches')
+  assert.equal(bytesToBigInt(signature[2]), expectedS, 'signature S matches')
 
   const verified = eddsa.verifyEDDSA(
     message,
-    { R8: [signature[0], signature[1]], S: bytesToBig(signature[2]) },
+    { R8: [signature[0], signature[1]], S: bytesToBigInt(signature[2]) },
     pubKey
   )
   assert.ok(verified, 'canonical signature verifies under the matching public key')
@@ -207,7 +193,7 @@ test('eddsa: rejects malleated signature with S out of range', async () => {
   const message = new Uint8Array(randomBytes(32))
   const pubKey = eddsa.privateKeyToPublicKey(privateKey)
   const sig = eddsa.signPoseidon(privateKey, message)
-  const S = bytesToBig(sig[2])
+  const S = bytesToBigInt(sig[2])
 
   assert.ok(S < BABYJUBJUB_SUBGROUP_ORDER, 'precondition: real S is in [0, L)')
   /**
@@ -240,7 +226,7 @@ test('eddsa: rejects signature verified against a different message', async () =
   assert.ok(
     !eddsa.verifyEDDSA(
       otherMessage,
-      { R8: [sig[0], sig[1]], S: bytesToBig(sig[2]) },
+      { R8: [sig[0], sig[1]], S: bytesToBigInt(sig[2]) },
       pubKey
     ),
     'verifying against a different message must not succeed'
@@ -278,7 +264,7 @@ test('eddsa: rejects forgery with R8 = identity point', async () => {
 
   assert.ok(!verifyWithIdentityR8(0n), 'R8 = O, S = 0 must not verify')
   assert.ok(!verifyWithIdentityR8(1n), 'R8 = O, S = 1 must not verify')
-  assert.ok(!verifyWithIdentityR8(bytesToBig(realSig[2])), 'R8 = O with honest S must not verify')
+  assert.ok(!verifyWithIdentityR8(bytesToBigInt(realSig[2])), 'R8 = O with honest S must not verify')
 })
 
 // Small-subgroup R8 attack. BabyJubJub has cofactor 8 — a weak verifier that
@@ -295,8 +281,8 @@ test('eddsa: rejects forgery with R8 in BabyJubJub small subgroup', async () => 
   const realSig = eddsa.signPoseidon(privateKey, message)
 
   for (const [x, y] of BABYJUBJUB_SMALL_SUBGROUP_POINTS) {
-    const R8: [Uint8Array, Uint8Array] = [bigToBytesBE(x), bigToBytesBE(y)]
-    for (const S of [0n, 1n, bytesToBig(realSig[2])]) {
+    const R8: [Uint8Array, Uint8Array] = [bigIntToBytes(x, 32), bigIntToBytes(y, 32)]
+    for (const S of [0n, 1n, bytesToBigInt(realSig[2])]) {
       assert.ok(
         !eddsa.verifyEDDSA(message, { R8, S }, pubKey),
         `R8 in small subgroup with S=${S} must not verify`
@@ -316,7 +302,7 @@ test('eddsa: rejects forgery with pubkey in BabyJubJub small subgroup', async ()
   const message = new Uint8Array(randomBytes(32))
 
   for (const [x, y] of BABYJUBJUB_SMALL_SUBGROUP_POINTS) {
-    const subgroupPub: [Uint8Array, Uint8Array] = [bigToBytesBE(x), bigToBytesBE(y)]
+    const subgroupPub: [Uint8Array, Uint8Array] = [bigIntToBytes(x, 32), bigIntToBytes(y, 32)]
     // Try crafted R8 (= the same subgroup point) and varied S — an attacker
     // would try to satisfy a tiny equation system. None should verify.
     for (const S of [0n, 1n, 2n, 12345n, BABYJUBJUB_SUBGROUP_ORDER - 1n]) {
@@ -342,7 +328,7 @@ test('eddsa: rejects verification with R8 = (0, 0) off-curve bytes', async () =>
   const realSig = eddsa.signPoseidon(privateKey, message)
 
   const zeroR8: [Uint8Array, Uint8Array] = [new Uint8Array(32), new Uint8Array(32)]
-  for (const S of [0n, 1n, bytesToBig(realSig[2]), BABYJUBJUB_SUBGROUP_ORDER - 1n]) {
+  for (const S of [0n, 1n, bytesToBigInt(realSig[2]), BABYJUBJUB_SUBGROUP_ORDER - 1n]) {
     assert.ok(
       !eddsa.verifyEDDSA(message, { R8: zeroR8, S }, pubKey),
       `R8 = (0, 0) off-curve with S = ${S} must not verify`
@@ -359,7 +345,7 @@ test('eddsa: rejects verification with pubkey = (0, 0) off-curve bytes', async (
   const realSig = eddsa.signPoseidon(privateKey, message)
 
   const zeroPub: [Uint8Array, Uint8Array] = [new Uint8Array(32), new Uint8Array(32)]
-  for (const S of [0n, 1n, bytesToBig(realSig[2]), BABYJUBJUB_SUBGROUP_ORDER - 1n]) {
+  for (const S of [0n, 1n, bytesToBigInt(realSig[2]), BABYJUBJUB_SUBGROUP_ORDER - 1n]) {
     assert.ok(
       !eddsa.verifyEDDSA(
         message,
@@ -384,7 +370,7 @@ test('eddsa: rejects signature verified under a different public key', async () 
   assert.ok(
     !eddsa.verifyEDDSA(
       message,
-      { R8: [sig[0], sig[1]], S: bytesToBig(sig[2]) },
+      { R8: [sig[0], sig[1]], S: bytesToBigInt(sig[2]) },
       otherPubKey
     ),
     'verifying under a different pubkey must not succeed'

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
 import { test } from 'node:test'
 
+import { hexToBytes } from '@railgun-reloaded/bytes'
+
 import type { CryptographyError } from '../src/index'
 import { AES } from '../src/index'
 
@@ -109,13 +111,6 @@ test('AES.getRandomIV returns a fresh 16-byte iv each call', () => {
   assert.ok(!a.every((v, i) => v === b[i]), 'two random IVs are not identical')
 })
 
-/**
- * Decodes a hex-encoded string into its raw byte representation.
- * @param h - hex-encoded string (no `0x` prefix)
- * @returns the decoded bytes as a `Uint8Array`
- */
-const fromHex = (h: string): Uint8Array => Uint8Array.from(Buffer.from(h, 'hex'))
-
 // AES-256-GCM known-answer vectors from Project Wycheproof
 // (testvectors_v1/aes_gcm_test.json: keySize=256, ivSize=128, tagSize=128, aad="").
 // `encryptGCM` generates its own IV, so these drive `decryptGCM` only.
@@ -167,13 +162,13 @@ for (const v of wycheproofGcmVectors) {
   test(`AES-256-GCM decrypts Wycheproof vector tcId=${v.tcId}`, () => {
     const recovered = AES.decryptGCM(
       {
-        iv: fromHex(v.iv),
-        tag: fromHex(v.tag),
-        data: v.ct === '' ? [] : [fromHex(v.ct)],
+        iv: hexToBytes(v.iv),
+        tag: hexToBytes(v.tag),
+        data: v.ct === '' ? [] : [hexToBytes(v.ct)],
       },
-      fromHex(v.key)
+      hexToBytes(v.key)
     )
-    const expected = v.pt === '' ? [] : [fromHex(v.pt)]
+    const expected = v.pt === '' ? [] : [hexToBytes(v.pt)]
     assert.deepEqual(recovered, expected)
   })
 }
@@ -183,19 +178,19 @@ for (const v of wycheproofGcmVectors) {
 // `encryptCTR` generates its own IV, so these drive `decryptCTR` only.
 // Source: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf
 test('AES-256-CTR decrypts NIST SP 800-38A F.5.6 vectors', () => {
-  const key = fromHex('603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4')
-  const iv = fromHex('f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff')
+  const key = hexToBytes('603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4')
+  const iv = hexToBytes('f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff')
   const ciphertext = [
-    fromHex('601ec313775789a5b7a7f504bbf3d228'),
-    fromHex('f443e3ca4d62b59aca84e990cacaf5c5'),
-    fromHex('2b0930daa23de94ce87017ba2d84988d'),
-    fromHex('dfc9c58db67aada613c2dd08457941a6'),
+    hexToBytes('601ec313775789a5b7a7f504bbf3d228'),
+    hexToBytes('f443e3ca4d62b59aca84e990cacaf5c5'),
+    hexToBytes('2b0930daa23de94ce87017ba2d84988d'),
+    hexToBytes('dfc9c58db67aada613c2dd08457941a6'),
   ]
   const expected = [
-    fromHex('6bc1bee22e409f96e93d7e117393172a'),
-    fromHex('ae2d8a571e03ac9c9eb76fac45af8e51'),
-    fromHex('30c81c46a35ce411e5fbc1191a0a52ef'),
-    fromHex('f69f2445df4f9b17ad2b417be66c3710'),
+    hexToBytes('6bc1bee22e409f96e93d7e117393172a'),
+    hexToBytes('ae2d8a571e03ac9c9eb76fac45af8e51'),
+    hexToBytes('30c81c46a35ce411e5fbc1191a0a52ef'),
+    hexToBytes('f69f2445df4f9b17ad2b417be66c3710'),
   ]
   const recovered = AES.decryptCTR({ iv, data: ciphertext }, key)
   assert.deepEqual(recovered, expected)
