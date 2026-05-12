@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
+import { bigIntToBytes } from '@railgun-reloaded/bytes'
+
 import type { CryptographyError } from '../src/index'
 import { initCircomlib, initPoseidon, poseidon, poseidonBuild, poseidonFunc, poseidonHex } from '../src/index'
 
@@ -184,22 +186,6 @@ for (const v of POSEIDON_REFERENCE_VECTORS) {
   })
 }
 
-/**
- * Encodes a bigint as a 32-byte big-endian `Uint8Array` for use as a
- * Poseidon field-element input.
- * @param v - non-negative `bigint` that fits in 32 bytes
- * @returns the 32-byte big-endian encoding
- */
-const bigToBytes32 = (v: bigint): Uint8Array => {
-  const out = new Uint8Array(32)
-  let x = v
-  for (let i = 31; i >= 0 && x > 0n; i--) {
-    out[i] = Number(x & 0xffn)
-    x >>= 8n
-  }
-  return out
-}
-
 // Cross-backend equivalence: the `poseidon` byte-API dispatches to wasm if
 // loaded, else pure. Both backends must produce identical output on the same
 // inputs — otherwise a caller's result silently depends on which `initCircomlib`
@@ -208,8 +194,8 @@ for (const v of POSEIDON_REFERENCE_VECTORS) {
   test(`poseidon: pure and wasm backends agree (${v.inputs.length} inputs)`, async () => {
     await initCircomlib('pure')
     await initCircomlib('wasm')
-    const padded = v.inputs.map((x) => bigToBytes32(x))
-    const expectedBytes = bigToBytes32(v.expected)
+    const padded = v.inputs.map((x) => bigIntToBytes(x, 32))
+    const expectedBytes = bigIntToBytes(v.expected, 32)
 
     const previousPure = poseidonBuild.pure
     const previousWasm = poseidonBuild.wasm
