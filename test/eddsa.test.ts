@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
-import { randomBytes } from 'node:crypto'
 import { test } from 'node:test'
 
+import { randomBytes } from '@noble/hashes/utils'
 import { bigIntToBytes, bytesToBigInt, hexToBytes } from '@railgun-reloaded/bytes'
 
 import { BABYJUBJUB_SUBGROUP_ORDER, eddsa, initCircomlib, initializeEddsa } from '../src/index'

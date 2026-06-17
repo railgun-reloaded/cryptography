@@ -1,5 +1,4 @@
-import { createCipheriv, createDecipheriv } from 'node:crypto'
-
+import { ctr, gcm } from '@noble/ciphers/aes'
 import { randomBytes } from '@noble/hashes/utils'
 
 import { CryptographyError } from '../errors'
@@ -64,11 +63,51 @@ const assertTagLength = (tag: Uint8Array): void => {
 }
 
 /**
+ * Concatenate a list of byte blocks into a single contiguous buffer.
+ * @param blocks - Blocks to join in order.
+ * @returns A new buffer holding every block back to back.
+ */
+const concatBlocks = (blocks: Uint8Array[]): Uint8Array => {
+  let length = 0
+  for (const block of blocks) {
+    length += block.byteLength
+  }
+
+  const joined = new Uint8Array(length)
+  let offset = 0
+  for (const block of blocks) {
+    joined.set(block, offset)
+    offset += block.byteLength
+  }
+
+  return joined
+}
+
+/**
+ * Split a buffer back into freshly-owned blocks matching the given lengths.
+ * @param buffer - Contiguous buffer to slice.
+ * @param lengths - Byte length of each output block, in order.
+ * @returns One block per length, each a standalone copy.
+ */
+const splitBlocks = (buffer: Uint8Array, lengths: number[]): Uint8Array[] => {
+  const blocks: Uint8Array[] = []
+  let offset = 0
+  for (const length of lengths) {
+    blocks.push(buffer.slice(offset, offset + length))
+    offset += length
+  }
+
+  return blocks
+}
+
+/**
  * AES-256 encryption helpers in GCM (authenticated) and CTR (streaming) modes.
  *
  * All inputs and outputs are `Uint8Array`. Keys must be 32 bytes; IVs are
  * generated internally on encrypt and read from the ciphertext bundle on
- * decrypt.
+ * decrypt. GCM and CTR are counter-mode stream ciphers, so the per-block
+ * data layout is preserved by encrypting the concatenated blocks in one shot
+ * and re-splitting the result at the original block boundaries.
  */
 class AES {
   /**
@@ -90,10 +129,11 @@ class AES {
     assertKeyLength(key)
 
     const iv = AES.getRandomIV()
-    const cipher = createCipheriv('aes-256-gcm', key, iv, { authTagLength: TAG_BYTES })
-    const data = plaintext.map((block) => new Uint8Array(cipher.update(block)))
-    cipher.final()
-    const tag = new Uint8Array(cipher.getAuthTag())
+    const sealed = gcm(key, iv).encrypt(concatBlocks(plaintext))
+
+    const tag = sealed.slice(sealed.byteLength - TAG_BYTES)
+    const body = sealed.subarray(0, sealed.byteLength - TAG_BYTES)
+    const data = splitBlocks(body, plaintext.map((block) => block.byteLength))
 
     return { iv, tag, data }
   }
@@ -114,13 +154,10 @@ class AES {
     assertTagLength(ciphertext.tag)
 
     try {
-      const decipher = createDecipheriv('aes-256-gcm', key, ciphertext.iv, { authTagLength: TAG_BYTES })
-      decipher.setAuthTag(ciphertext.tag)
+      const sealed = concatBlocks([...ciphertext.data, ciphertext.tag])
+      const plaintext = gcm(key, ciphertext.iv).decrypt(sealed)
 
-      const data = ciphertext.data.map((block) => new Uint8Array(decipher.update(block)))
-      decipher.final()
-
-      return data
+      return splitBlocks(plaintext, ciphertext.data.map((block) => block.byteLength))
     } catch (cause) {
       throw new CryptographyError('DecryptionFailed', 'Unable to decrypt ciphertext.', { cause })
     }
@@ -137,9 +174,8 @@ class AES {
     assertKeyLength(key)
 
     const iv = AES.getRandomIV()
-    const cipher = createCipheriv('aes-256-ctr', key, iv)
-    const data = plaintext.map((block) => new Uint8Array(cipher.update(block)))
-    cipher.final()
+    const body = ctr(key, iv).encrypt(concatBlocks(plaintext))
+    const data = splitBlocks(body, plaintext.map((block) => block.byteLength))
 
     return { iv, data }
   }
@@ -156,11 +192,9 @@ class AES {
     assertKeyLength(key)
     assertIvLength(ciphertext.iv)
 
-    const decipher = createDecipheriv('aes-256-ctr', key, ciphertext.iv)
-    const data = ciphertext.data.map((block) => new Uint8Array(decipher.update(block)))
-    decipher.final()
+    const plaintext = ctr(key, ciphertext.iv).decrypt(concatBlocks(ciphertext.data))
 
-    return data
+    return splitBlocks(plaintext, ciphertext.data.map((block) => block.byteLength))
   }
 }
 
