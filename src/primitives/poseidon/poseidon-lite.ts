@@ -1,7 +1,7 @@
 import { bigIntToBytes, bytesToBigInt } from '@railgun-reloaded/bytes'
 import * as poseidonLib from 'poseidon-lite'
 
-import { CryptographyError } from '../errors'
+import { CryptographyError } from '../errors.js'
 
 type PoseidonFnName = Extract<keyof typeof poseidonLib, `poseidon${number}`>
 

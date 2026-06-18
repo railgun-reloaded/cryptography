@@ -4,8 +4,8 @@ import { test } from 'node:test'
 
 import { hexToBytes } from '@railgun-reloaded/bytes'
 
-import type { CryptographyError } from '../src/index'
-import { AES } from '../src/index'
+import type { CryptographyError } from '../src/index.js'
+import { AES } from '../src/index.js'
 
 /**
  * Generate a fresh 32-byte AES key from system randomness.

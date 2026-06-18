@@ -2,7 +2,7 @@ import { createCipheriv, createDecipheriv } from 'node:crypto'
 
 import { randomBytes } from '@noble/hashes/utils'
 
-import { CryptographyError } from '../errors'
+import { CryptographyError } from '../errors.js'
 
 type Ciphertext = {
   iv: Uint8Array;

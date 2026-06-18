@@ -3,7 +3,7 @@ import { test } from 'node:test'
 
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
 
-import { sha256 } from '../src/index'
+import { sha256 } from '../src/index.js'
 
 // SHA-256 known-answer vectors:
 //   - FIPS 180-4 Appendix B.1: empty string and "abc".

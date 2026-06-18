@@ -3,8 +3,8 @@ import { test } from 'node:test'
 
 import { bigIntToBytes } from '@railgun-reloaded/bytes'
 
-import type { CryptographyError } from '../src/index'
-import { initCircomlib, initPoseidon, poseidon, poseidonBuild, poseidonFunc, poseidonHex } from '../src/index'
+import type { CryptographyError } from '../src/index.js'
+import { initCircomlib, initPoseidon, poseidon, poseidonBuild, poseidonFunc, poseidonHex } from '../src/index.js'
 
 const VECTOR_INPUTS_2 = [
   '0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a',

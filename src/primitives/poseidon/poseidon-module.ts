@@ -1,6 +1,6 @@
-import { CryptographyError } from '../errors'
+import { CryptographyError } from '../errors.js'
 
-import { initCircomlib, poseidonBuild } from './poseidon-circomlibjs'
+import { initCircomlib, poseidonBuild } from './poseidon-circomlibjs.js'
 
 /**
  * One-shot initialization for the Poseidon module. Tries the WASM build first

@@ -1,7 +1,7 @@
 // @ts-ignore -- circomlibjs ships no upstream type definitions
 import { buildEddsa } from 'circomlibjs'
 
-import { CryptographyError } from '../errors'
+import { CryptographyError } from '../errors.js'
 
 /**
  * Minimal type for the circomlibjs EDDSA build object covering the surface

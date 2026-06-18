@@ -1,6 +1,6 @@
 import { bigIntToBytes } from '@railgun-reloaded/bytes'
 
-import { assertEddsaReady } from './eddsa'
+import { assertEddsaReady } from './eddsa.js'
 
 type CircomlibSignature = {
   R8: [Uint8Array, Uint8Array];

@@ -4,7 +4,7 @@ import { test } from 'node:test'
 
 import { bigIntToBytes, bytesToBigInt, hexToBytes } from '@railgun-reloaded/bytes'
 
-import { BABYJUBJUB_SUBGROUP_ORDER, eddsa, initCircomlib, initializeEddsa } from '../src/index'
+import { BABYJUBJUB_SUBGROUP_ORDER, eddsa, initCircomlib, initializeEddsa } from '../src/index.js'
 
 // Non-identity points in the 8-torsion subgroup of BabyJubJub (cofactor 8).
 // Order 1 (identity) is exercised separately by the R8 = (0, 1) test above.

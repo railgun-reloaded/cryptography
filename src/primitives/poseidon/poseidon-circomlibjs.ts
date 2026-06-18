@@ -2,7 +2,7 @@ import { bigIntToBytes, bytesToHex, padBytesLeft } from '@railgun-reloaded/bytes
 // @ts-ignore -- circomlibjs ships no upstream type definitions
 import { buildPoseidon, buildPoseidonOpt } from 'circomlibjs'
 
-import { CryptographyError } from '../errors'
+import { CryptographyError } from '../errors.js'
 
 const constructors = {
   pure: buildPoseidonOpt, // optimized js implementation

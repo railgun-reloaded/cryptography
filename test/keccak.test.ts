@@ -3,7 +3,7 @@ import { test } from 'node:test'
 
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
 
-import { keccak256 } from '../src/index'
+import { keccak256 } from '../src/index.js'
 
 const VECTORS = [
   {
