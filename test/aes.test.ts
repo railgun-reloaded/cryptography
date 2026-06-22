@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { randomBytes } from 'node:crypto'
+import { createCipheriv, randomBytes } from 'node:crypto'
 import { test } from 'node:test'
 
 import { hexToBytes } from '@railgun-reloaded/bytes'
@@ -12,6 +12,22 @@ import { AES } from '../src/index.js'
  * @returns A 32-byte Uint8Array suitable for AES-256.
  */
 const key32 = (): Uint8Array => new Uint8Array(randomBytes(32))
+
+/**
+ * Concatenate byte blocks into a single contiguous Uint8Array.
+ * @param blocks - Blocks to join in order.
+ * @returns A new Uint8Array holding every block back to back.
+ */
+const concat = (blocks: Uint8Array[]): Uint8Array => {
+  const total = blocks.reduce((sum, block) => sum + block.length, 0)
+  const joined = new Uint8Array(total)
+  let offset = 0
+  for (const block of blocks) {
+    joined.set(block, offset)
+    offset += block.length
+  }
+  return joined
+}
 
 test('AES-256-GCM encrypt + decrypt roundtrip', () => {
   const key = key32()
@@ -194,4 +210,84 @@ test('AES-256-CTR decrypts NIST SP 800-38A F.5.6 vectors', () => {
   ]
   const recovered = AES.decryptCTR({ iv, data: ciphertext }, key)
   assert.deepEqual(recovered, expected)
+})
+
+test('AES-256-GCM preserves uneven, non-block-aligned chunk boundaries', () => {
+  const key = key32()
+  const plaintext = [
+    new Uint8Array(1).fill(0xa1),
+    new Uint8Array(16).fill(0xb2),
+    new Uint8Array(17).fill(0xc3),
+    new Uint8Array(31).fill(0xd4),
+    new Uint8Array(5).fill(0xe5),
+  ]
+  const ct = AES.encryptGCM(plaintext, key)
+  assert.equal(ct.data.length, plaintext.length, 'chunk count is preserved')
+  assert.deepEqual(
+    ct.data.map((chunk) => chunk.length),
+    plaintext.map((chunk) => chunk.length),
+    'each ciphertext chunk length matches its plaintext chunk'
+  )
+  assert.deepEqual(AES.decryptGCM(ct, key), plaintext)
+})
+
+test('AES-256-CTR preserves uneven, non-block-aligned chunk boundaries', () => {
+  const key = key32()
+  const plaintext = [
+    new Uint8Array(3).fill(0x1f),
+    new Uint8Array(16).fill(0x2e),
+    new Uint8Array(15).fill(0x3d),
+    new Uint8Array(33).fill(0x4c),
+  ]
+  const ct = AES.encryptCTR(plaintext, key)
+  assert.equal(ct.data.length, plaintext.length, 'chunk count is preserved')
+  assert.deepEqual(
+    ct.data.map((chunk) => chunk.length),
+    plaintext.map((chunk) => chunk.length),
+    'each ciphertext chunk length matches its plaintext chunk'
+  )
+  assert.deepEqual(AES.decryptCTR(ct, key), plaintext)
+})
+
+test('AES-256-GCM round-trips empty input', () => {
+  const key = key32()
+  const ct = AES.encryptGCM([], key)
+  assert.equal(ct.data.length, 0)
+  assert.equal(ct.tag.length, 16)
+  assert.deepEqual(AES.decryptGCM(ct, key), [])
+})
+
+test('AES-256-CTR round-trips empty input', () => {
+  const key = key32()
+  const ct = AES.encryptCTR([], key)
+  assert.equal(ct.data.length, 0)
+  assert.deepEqual(AES.decryptCTR(ct, key), [])
+})
+
+test('AES-256-GCM output is byte-identical to node:crypto for a fixed key and iv', () => {
+  const key = key32()
+  const plaintext = [new Uint8Array([1, 2, 3, 4]), new Uint8Array(20).fill(7)]
+  const ct = AES.encryptGCM(plaintext, key)
+
+  const reference = createCipheriv('aes-256-gcm', key, ct.iv, { authTagLength: 16 })
+  const referenceBody = concat(plaintext.map((block) => new Uint8Array(reference.update(block))))
+  reference.final()
+  const referenceTag = new Uint8Array(reference.getAuthTag())
+
+  assert.deepEqual(concat(ct.data), referenceBody, 'ciphertext bytes match node:crypto')
+  assert.deepEqual(ct.tag, referenceTag, 'auth tag matches node:crypto')
+})
+
+test('AES-256-CTR output is byte-identical to node:crypto for a fixed key and iv', () => {
+  const key = key32()
+  const plaintext = [new Uint8Array([1, 2, 3]), new Uint8Array(20).fill(9)]
+  const ct = AES.encryptCTR(plaintext, key)
+
+  const reference = createCipheriv('aes-256-ctr', key, ct.iv)
+  const referenceBody = concat([
+    ...plaintext.map((block) => new Uint8Array(reference.update(block))),
+    new Uint8Array(reference.final()),
+  ])
+
+  assert.deepEqual(concat(ct.data), referenceBody, 'ciphertext bytes match node:crypto')
 })
