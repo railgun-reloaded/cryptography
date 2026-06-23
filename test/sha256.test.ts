@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 
 import { sha256 } from '../src/index.js'
 

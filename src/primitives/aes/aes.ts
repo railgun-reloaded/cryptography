@@ -1,5 +1,5 @@
 import { ctr, gcm } from '@noble/ciphers/aes.js'
-import { randomBytes } from '@noble/hashes/utils'
+import { randomBytes } from '@noble/hashes/utils.js'
 
 import { CryptographyError } from '../errors.js'
 

@@ -4,7 +4,7 @@ import { test } from 'node:test'
 
 import { bigIntToBytes, bytesToBigInt, hexToBytes } from '@railgun-reloaded/bytes'
 
-import { BABYJUBJUB_SUBGROUP_ORDER, eddsa, initCircomlib, initializeEddsa } from '../src/index.js'
+import { BABYJUBJUB_SUBGROUP_ORDER, eddsa } from '../src/index.js'
 
 // Non-identity points in the 8-torsion subgroup of BabyJubJub (cofactor 8).
 // Order 1 (identity) is exercised separately by the R8 = (0, 1) test above.
@@ -28,10 +28,7 @@ const BABYJUBJUB_SMALL_SUBGROUP_POINTS: ReadonlyArray<[bigint, bigint]> = [
   ],
 ]
 
-test('eddsa: signPoseidon roundtrip verifies under verifyEDDSA', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: signPoseidon roundtrip verifies under verifyEDDSA', () => {
   const privateKey = new Uint8Array(randomBytes(32))
   const message = new Uint8Array(randomBytes(32))
   const pubKey = eddsa.privateKeyToPublicKey(privateKey)
@@ -50,10 +47,7 @@ test('eddsa: signPoseidon roundtrip verifies under verifyEDDSA', async () => {
   assert.ok(verified, 'signature verifies under the matching public key')
 })
 
-test('eddsa: verifyEDDSA does not mutate signature or pubkey arrays', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: verifyEDDSA does not mutate signature or pubkey arrays', () => {
   const privateKey = new Uint8Array(randomBytes(32))
   const message = new Uint8Array(randomBytes(32))
   const pubKey = eddsa.privateKeyToPublicKey(privateKey)
@@ -81,10 +75,7 @@ test('eddsa: verifyEDDSA does not mutate signature or pubkey arrays', async () =
   assert.ok(second, 'second verify still succeeds')
 })
 
-test('eddsa: known public key from a fixed input', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: known public key from a fixed input', () => {
   const input = new Uint8Array([
     207, 255, 35, 123, 225, 202, 70, 139,
     250, 120, 235, 158, 5, 168, 39, 1,
@@ -119,10 +110,7 @@ test('eddsa: known public key from a fixed input', async () => {
 // Our `signPoseidon` takes raw bytes, reverses them, then runs `toMontgomery`
 // — so the equivalent input is the 32-byte big-endian encoding of that same
 // scalar (20 leading zero bytes followed by the LE bytes reversed).
-test('eddsa: signs canonical circomlibjs reference vector', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: signs canonical circomlibjs reference vector', () => {
   const privateKey = hexToBytes('0001020304050607080900010203040506070809000102030405060708090001')
   const message = hexToBytes('0000000000000000000000000000000000000000000009080706050403020100')
 
@@ -154,10 +142,7 @@ test('eddsa: signs canonical circomlibjs reference vector', async () => {
 // it for an arbitrary R (and certainly not with R = the public key, R = a
 // real signature's R8, or random points). A verifier that accepts S=0 is
 // catastrophically broken — anyone could forge signatures.
-test('eddsa: rejects forged signature with S=0', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: rejects forged signature with S=0', () => {
   const privateKey = new Uint8Array(randomBytes(32))
   const message = new Uint8Array(randomBytes(32))
   const pubKey = eddsa.privateKeyToPublicKey(privateKey)
@@ -185,10 +170,7 @@ test('eddsa: rejects forged signature with S=0', async () => {
 // circomlibjs's verifyPoseidon infinite-loops on negative S, so our wrapper
 // validates the range up-front to close both the malleability gap and a DOS
 // vector.
-test('eddsa: rejects malleated signature with S out of range', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: rejects malleated signature with S out of range', () => {
   const privateKey = new Uint8Array(randomBytes(32))
   const message = new Uint8Array(randomBytes(32))
   const pubKey = eddsa.privateKeyToPublicKey(privateKey)
@@ -213,10 +195,7 @@ test('eddsa: rejects malleated signature with S out of range', async () => {
   assert.ok(!verifyWithS(-1n), 'S = -1 must not verify')
 })
 
-test('eddsa: rejects signature verified against a different message', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: rejects signature verified against a different message', () => {
   const privateKey = new Uint8Array(randomBytes(32))
   const message = new Uint8Array(randomBytes(32))
   const otherMessage = new Uint8Array(randomBytes(32))
@@ -238,10 +217,7 @@ test('eddsa: rejects signature verified against a different message', async () =
 // forger can only satisfy by knowing the private key (S = h·sk mod L).
 // A verifier that skips proper point checks could still accept this with
 // crafted S, so we exercise a few candidate S values an attacker might try.
-test('eddsa: rejects forgery with R8 = identity point', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: rejects forgery with R8 = identity point', () => {
   const privateKey = new Uint8Array(randomBytes(32))
   const message = new Uint8Array(randomBytes(32))
   const pubKey = eddsa.privateKeyToPublicKey(privateKey)
@@ -271,10 +247,7 @@ test('eddsa: rejects forgery with R8 = identity point', async () => {
 // doesn't enforce prime-order subgroup membership on R8 could be tricked
 // into accepting forgeries with R8 chosen from the 8-torsion. circomlibjs
 // uses cofactored verification with Base8, so these should all be rejected.
-test('eddsa: rejects forgery with R8 in BabyJubJub small subgroup', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: rejects forgery with R8 in BabyJubJub small subgroup', () => {
   const privateKey = new Uint8Array(randomBytes(32))
   const message = new Uint8Array(randomBytes(32))
   const pubKey = eddsa.privateKeyToPublicKey(privateKey)
@@ -295,10 +268,7 @@ test('eddsa: rejects forgery with R8 in BabyJubJub small subgroup', async () => 
 // 8-torsion has only 8 possible h·A values (since A has order ≤ 8), making
 // the verification equation cheap to satisfy by exhaustive search of S.
 // A correct cofactored verifier rejects these regardless of the S value tried.
-test('eddsa: rejects forgery with pubkey in BabyJubJub small subgroup', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: rejects forgery with pubkey in BabyJubJub small subgroup', () => {
   const message = new Uint8Array(randomBytes(32))
 
   for (const [x, y] of BABYJUBJUB_SMALL_SUBGROUP_POINTS) {
@@ -318,10 +288,7 @@ test('eddsa: rejects forgery with pubkey in BabyJubJub small subgroup', async ()
 // point — circomlibjs's inCurve check should reject it for both R8 and A.
 // We pin that behavior so a future refactor that bypasses inCurve cannot
 // silently regress.
-test('eddsa: rejects verification with R8 = (0, 0) off-curve bytes', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: rejects verification with R8 = (0, 0) off-curve bytes', () => {
   const privateKey = new Uint8Array(randomBytes(32))
   const message = new Uint8Array(randomBytes(32))
   const pubKey = eddsa.privateKeyToPublicKey(privateKey)
@@ -336,10 +303,7 @@ test('eddsa: rejects verification with R8 = (0, 0) off-curve bytes', async () =>
   }
 })
 
-test('eddsa: rejects verification with pubkey = (0, 0) off-curve bytes', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: rejects verification with pubkey = (0, 0) off-curve bytes', () => {
   const privateKey = new Uint8Array(randomBytes(32))
   const message = new Uint8Array(randomBytes(32))
   const realSig = eddsa.signPoseidon(privateKey, message)
@@ -357,10 +321,7 @@ test('eddsa: rejects verification with pubkey = (0, 0) off-curve bytes', async (
   }
 })
 
-test('eddsa: rejects signature verified under a different public key', async () => {
-  await initCircomlib('pure')
-  await initializeEddsa()
-
+test('eddsa: rejects signature verified under a different public key', () => {
   const privateKey = new Uint8Array(randomBytes(32))
   const otherPrivateKey = new Uint8Array(randomBytes(32))
   const message = new Uint8Array(randomBytes(32))
