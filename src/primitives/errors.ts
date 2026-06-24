@@ -8,8 +8,6 @@ type CryptographyErrorCode =
   | 'InvalidIvLength'
   | 'InvalidTagLength'
   | 'DecryptionFailed'
-  | 'EddsaNotInitialized'
-  | 'PoseidonNotLoaded'
   | 'InvalidInputCount'
   | 'NullInput'
   | 'InvalidInputType'
