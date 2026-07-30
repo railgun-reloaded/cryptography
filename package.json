@@ -4,6 +4,11 @@
   "description": "Collection of cryptographic primitives used by RAILGUN",
   "type": "module",
   "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts"
+  ],
   "scripts": {
     "build": "tsc --build",
     "clean": "tsc --build --clean",
