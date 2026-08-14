@@ -138,3 +138,45 @@ for (const v of POSEIDON_REFERENCE_VECTORS) {
     assert.deepEqual(got, bigIntToBytes(v.expected, 32))
   })
 }
+
+// Round constants and the MDS matrix are *derived* at runtime from noble's
+// Grain LFSR generator rather than vendored as tables, and each arity is
+// generated independently. A change to the upstream generator would therefore
+// silently alter hashes for some or all widths — so every supported arity is
+// pinned here, not just the three with published circomlibjs vectors above.
+//
+// Digests are Poseidon(1..n) for each n, captured from the circomlib-compatible
+// reference implementation. The n = 2, 4 and 6 entries are the same values as
+// POSEIDON_REFERENCE_VECTORS, which are upstream circomlibjs test vectors.
+const POSEIDON_ARITY_DIGESTS = [
+  18586133768512220936620570745912940619677854269274689475585506675881198879027n,
+  7853200120776062878684798364095072458815029376092732009249414926327459813530n,
+  6542985608222806190361240322586112750744169038454362455181422643027100751666n,
+  18821383157269793795438455681495246036402687001665670618754263018637548127333n,
+  6183221330272524995739186171720101788151706631170188140075976616310159254464n,
+  20400040500897583745843009878988256314335038853985262692600694741116813247201n,
+  12748163991115452309045839028154629052133952896122405799815156419278439301912n,
+  18604317144381847857886385684060986177838410221561136253933256952257712543953n,
+  13589767895268936107593642967621470491511464502761040466226072462545218539640n,
+  3657500514307717306974218405144578736633140001277925127187636780142269815841n,
+  3572015662710076994097916907865950486270383304442561406230608893458731714472n,
+  2501997477381648492950318384533644783248002172679259592360114615426357826485n,
+  7041832639553862712666971417715061873827921493498355005117622707743491651590n,
+  8354478399926161176778659061636406690034081872658507739535256090879947077494n,
+] as const
+
+for (const [index, expected] of POSEIDON_ARITY_DIGESTS.entries()) {
+  const arity = index + 1
+  test(`derived constants produce the pinned digest for arity ${arity}`, () => {
+    const inputs = Array.from({ length: arity }, (_, i) => BigInt(i + 1))
+    assert.equal(poseidonFunc(inputs, true) as bigint, expected)
+  })
+}
+
+test('the three published circomlibjs vectors agree with the per-arity digests', () => {
+  for (const v of POSEIDON_REFERENCE_VECTORS) {
+    const sequential = v.inputs.every((x, i) => x === BigInt(i + 1))
+    assert.ok(sequential, 'reference inputs are 1..n, so the digests are comparable')
+    assert.equal(POSEIDON_ARITY_DIGESTS[v.inputs.length - 1], v.expected)
+  }
+})

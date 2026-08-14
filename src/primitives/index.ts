@@ -1,6 +1,6 @@
 export { keccak256 } from './keccak.js'
 export { sha256 } from './hash.js'
-export { poseidon, poseidonHex, poseidonFunc } from './poseidon/poseidon-lite.js'
+export { poseidon, poseidonHex, poseidonFunc } from './poseidon/poseidon.js'
 export { eddsa, BABYJUBJUB_SUBGROUP_ORDER } from './eddsa/index.js'
 export type { EddsaSignature } from './eddsa/index.js'
 export { AES } from './aes/index.js'

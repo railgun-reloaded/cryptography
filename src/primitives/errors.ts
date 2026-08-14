@@ -12,6 +12,7 @@ type CryptographyErrorCode =
   | 'NullInput'
   | 'InvalidInputType'
   | 'InvalidOutputType'
+  | 'PoseidonConstantMismatch'
 
 /**
  * The single error class thrown by every helper in this package. Consumers

@@ -1,5 +1,12 @@
-import { PrivateKey, PublicKey, Signature } from '@iden3/js-crypto'
 import { bigIntToBytes, bytesToBigInt } from '@railgun-reloaded/bytes'
+
+import {
+  FIELD_MODULUS,
+  SUBGROUP_ORDER,
+  derivePublicKey,
+  signPoseidon,
+  verifyPoseidon,
+} from './eddsa.js'
 
 type EddsaSignature = {
   R8: [Uint8Array, Uint8Array];
@@ -10,15 +17,7 @@ type EddsaSignature = {
 // A canonical EdDSA signature must have S ∈ [0, L). Out-of-range S is a
 // signature-malleability vector — two distinct (R8, S) pairs verifying the
 // same message — so we reject it at the wrapper boundary.
-const BABYJUBJUB_SUBGROUP_ORDER =
-  2736030358979909402780800718157159386076813972158567259200215660948447373041n
-
-// Base field modulus of BabyJubJub. Messages are reduced into this field
-// before hashing so that any byte length is accepted, matching the canonical
-// scheme. Field-element messages (the only ones used in practice) are already
-// in range, so the reduction is a no-op for them.
-const BABYJUBJUB_FIELD_MODULUS =
-  21888242871839275222246405745257275088548364400416034343698204186575808495617n
+const BABYJUBJUB_SUBGROUP_ORDER = SUBGROUP_ORDER
 
 /**
  * Reduce message bytes into the BabyJubJub base field as a big-endian integer.
@@ -26,7 +25,7 @@ const BABYJUBJUB_FIELD_MODULUS =
  * @returns The message as a field element in `[0, p)`.
  */
 const messageToField = (message: Uint8Array): bigint =>
-  bytesToBigInt(message) % BABYJUBJUB_FIELD_MODULUS
+  bytesToBigInt(message) % FIELD_MODULUS
 
 const eddsa = {
   /**
@@ -35,9 +34,9 @@ const eddsa = {
    * @returns The public key as a tuple of two 32-byte big-endian coordinates.
    */
   privateKeyToPublicKey (privateKey: Uint8Array): [Uint8Array, Uint8Array] {
-    const { p } = new PrivateKey(privateKey).public()
+    const { x, y } = derivePublicKey(privateKey)
 
-    return [bigIntToBytes(p[0], 32), bigIntToBytes(p[1], 32)]
+    return [bigIntToBytes(x, 32), bigIntToBytes(y, 32)]
   },
 
   /**
@@ -52,12 +51,12 @@ const eddsa = {
     key: Uint8Array,
     message: Uint8Array
   ): [Uint8Array, Uint8Array, Uint8Array] {
-    const signature = new PrivateKey(key).signPoseidon(messageToField(message))
+    const { R8, S } = signPoseidon(key, messageToField(message))
 
     return [
-      bigIntToBytes(signature.R8[0], 32),
-      bigIntToBytes(signature.R8[1], 32),
-      bigIntToBytes(signature.S, 32),
+      bigIntToBytes(R8.x, 32),
+      bigIntToBytes(R8.y, 32),
+      bigIntToBytes(S, 32),
     ]
   },
 
@@ -75,19 +74,17 @@ const eddsa = {
     signature: EddsaSignature,
     pubkey: [Uint8Array, Uint8Array]
   ): boolean {
-    if (signature.S < 0n || signature.S >= BABYJUBJUB_SUBGROUP_ORDER) return false
-
-    try {
-      const publicKey = new PublicKey([bytesToBigInt(pubkey[0]), bytesToBigInt(pubkey[1])])
-      const sig = new Signature(
-        [bytesToBigInt(signature.R8[0]), bytesToBigInt(signature.R8[1])],
-        signature.S
-      )
-
-      return publicKey.verifyPoseidon(messageToField(message), sig)
-    } catch {
-      return false
-    }
+    return verifyPoseidon(
+      messageToField(message),
+      {
+        R8: {
+          x: bytesToBigInt(signature.R8[0]),
+          y: bytesToBigInt(signature.R8[1]),
+        },
+        S: signature.S,
+      },
+      { x: bytesToBigInt(pubkey[0]), y: bytesToBigInt(pubkey[1]) }
+    )
   },
 }
 
