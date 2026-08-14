@@ -1,9 +1,8 @@
 import { bigIntToBytes, bytesToBigInt, bytesToHex, padBytesLeft } from '@railgun-reloaded/bytes'
-import * as poseidonLib from 'poseidon-lite'
 
 import { CryptographyError } from '../errors.js'
 
-type PoseidonFnName = Extract<keyof typeof poseidonLib, `poseidon${number}`>
+import { MAX_ARITY, MIN_ARITY, poseidonPermute } from './permutation.js'
 
 /**
  * Compute a Poseidon hash for 1 to 14 inputs.
@@ -28,10 +27,10 @@ const poseidonFunc = (
   returnBigInt = false,
   nOuts: number = 1
 ): bigint | bigint[] | Uint8Array | Uint8Array[] => {
-  if (inputs.length < 1 || inputs.length > 14) {
+  if (inputs.length < MIN_ARITY || inputs.length > MAX_ARITY) {
     throw new CryptographyError(
       'InvalidInputCount',
-      'Poseidon function index must be between 1 and 14'
+      `Poseidon function index must be between ${MIN_ARITY} and ${MAX_ARITY}`
     )
   }
 
@@ -46,30 +45,22 @@ const poseidonFunc = (
     throw new CryptographyError('InvalidInputType', `Invalid input type: ${typeof input}`)
   })
 
-  const fnName = `poseidon${inputs.length}` as PoseidonFnName
-  const output = poseidonLib[fnName](bigInputs, nOuts)
+  const output = poseidonPermute(bigInputs, nOuts)
 
-  if (nOuts === 1) {
-    if (typeof output !== 'bigint') {
-      throw new CryptographyError(
-        'InvalidOutputType',
-        `Expected output to be a bigint, got ${typeof output}`
-      )
-    }
-
-    return returnBigInt ? output : bigIntToBytes(output, 32)
-  }
-
-  if (!Array.isArray(output) || output.length !== nOuts) {
+  if (output.length !== nOuts) {
     throw new CryptographyError(
       'InvalidOutputType',
       `Expected output to be an array of length ${nOuts}`
     )
   }
 
-  return returnBigInt
-    ? (output as bigint[])
-    : output.map((o) => bigIntToBytes(o as bigint, 32))
+  if (nOuts === 1) {
+    const single = output[0]!
+
+    return returnBigInt ? single : bigIntToBytes(single, 32)
+  }
+
+  return returnBigInt ? output : output.map((o) => bigIntToBytes(o, 32))
 }
 
 /**
